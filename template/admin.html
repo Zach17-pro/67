@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SixSeven — Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#f5f7fa; }
+    .card { background:white; padding:20px 24px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); width:720px; max-width:95%; }
+    .card h2 { margin:0 0 12px 0; font-size:20px; }
+    .row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    label { display:block; margin:6px 0 4px; font-size:13px; }
+    input[type="text"], select { padding:8px 10px; border:1px solid #ccd6e0; border-radius:6px; box-sizing:border-box; font-size:14px; }
+    input[type="text"] { width:240px; }
+    .btn { padding:8px 12px; background:#2b78e4; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+    .btn.secondary { background:#6b7280; }
+    .btn.danger { background:#b00020; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .form-grid { display:flex; gap:12px; margin-top:8px; }
+    .form-grid > div { flex:1; }
+    table { width:100%; border-collapse:collapse; margin-top:14px; font-size:14px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #eee; }
+    .hint { color:#666; font-size:12px; margin-top:8px; }
+    .small { font-size:13px; color:#333; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Admin Panel</h2>
+
+    <div class="row">
+      <input id="searchInput" type="text" placeholder="Search users by username or role" />
+      <button class="btn" id="searchBtn">Search</button>
+      <button class="btn secondary" id="refreshBtn">Refresh</button>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="createBtn">Create</button>
+      <button class="btn" id="readBtn">Read</button>
+      <button class="btn" id="updateBtn">Update</button>
+      <button class="btn danger" id="deleteBtn">Delete</button>
+    </div>
+
+    <form id="crudForm" style="margin-top:12px">
+      <div class="form-grid">
+        <div>
+          <label for="userId">ID (for update/delete)</label>
+          <input id="userId" name="id" type="text" placeholder="leave blank for create" />
+        </div>
+        <div>
+          <label for="userName">Username</label>
+          <input id="userName" name="username" type="text" />
+        </div>
+        <div>
+          <label for="userRole">Role</label>
+          <select id="userRole" name="role">
+            <option>Admin</option>
+            <option>CSR Rep</option>
+            <option>PIN</option>
+            <option>Platform Manager</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn" id="submitCreate" type="button">Submit Create</button>
+        <button class="btn secondary" id="submitUpdate" type="button">Submit Update</button>
+        <button class="btn danger" id="submitDelete" type="button">Submit Delete</button>
+      </div>
+    </form>
+
+    <div id="resultsArea">
+      <table id="resultsTable" aria-live="polite">
+        <thead>
+          <tr><th>ID</th><th>Username</th><th>Role</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <!-- rows injected here -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="hint">Actions call placeholder endpoints. Hook to your Flask API (/admin/create, /admin/read, /admin/update, /admin/delete, /admin/search).</div>
+  </div>
+
+  <script>
+    const api = {
+      create: '/admin/api/create',
+      read:   '/admin/api/read',
+      update: '/admin/api/update',
+      delete: '/admin/api/delete',
+      search: '/admin/api/search'
+    };
+
+    // Utility: render simple table rows
+    function renderResults(items){
+      const tbody = document.querySelector('#resultsTable tbody');
+      tbody.innerHTML = '';
+      if(!items || items.length === 0){
+        tbody.innerHTML = '<tr><td colspan="4" style="color:#666">No results</td></tr>';
+        return;
+      }
+      items.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${it.id}</td><td>${escapeHtml(it.username)}</td><td>${escapeHtml(it.role)}</td>
+          <td>
+            <button class="btn secondary" data-id="${it.id}" onclick="fillForm(${it.id}, '${escapeJs(it.username)}', '${escapeJs(it.role)}')">Edit</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Basic escaping helpers
+    function escapeHtml(s){ return String(s || '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function escapeJs(s){ return String(s || '').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+    function showMessage(msg){ alert(msg); }
+
+    // Placeholder fetch wrapper: tries real endpoint, falls back to simulated data if 404 or network error
+    async function callApi(path, opts){
+      try {
+        const res = await fetch(path, opts);
+        if (!res.ok) {
+          const text = await res.text().catch(()=>res.statusText);
+          throw new Error(text || 'Request failed');
+        }
+        return await res.json().catch(()=>null);
+      } catch (err) {
+        // fallback: signal to implement backend
+        throw new Error('API call failed. Implement ' + path + ' on the server. (' + err.message + ')');
+      }
+    }
+
+    // CRUD handlers
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const q = document.getElementById('searchInput').value.trim();
+      try {
+        const data = await callApi(api.search + '?q=' + encodeURIComponent(q), { method: 'GET' });
+        renderResults(data || []);
+      } catch (e) { showMessage(e.message); }
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      try {
+        const data = await callApi(api.read, { method: 'GET' });
+        renderResults(data || []);
+      } catch (e) { showMessage(e.message); }
+    });
+
+    document.getElementById('submitCreate').addEventListener('click', async () => {
+      const username = document.getElementById('userName').value.trim();
+      const role = document.getElementById('userRole').value;
+      if (!username){ showMessage('Enter username'); return; }
+      try {
+        const data = await callApi(api.create, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, role }) });
+        showMessage('Created: ' + JSON.stringify(data));
+      } catch (e){ showMessage(e.message); }
+    });
+
+    document.getElementById('submitUpdate').addEventListener('click', async () => {
+      const id = document.getElementById('userId').value.trim();
+      const username = document.getElementById('userName').value.trim();
+      const role = document.getElementById('userRole').value;
+      if (!id){ showMessage('Enter ID to update'); return; }
+      try {
+        const data = await callApi(api.update, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, username, role }) });
+        showMessage('Updated: ' + JSON.stringify(data));
+      } catch (e){ showMessage(e.message); }
+    });
+
+    document.getElementById('submitDelete').addEventListener('click', async () => {
+      const id = document.getElementById('userId').value.trim();
+      if (!id){ showMessage('Enter ID to delete'); return; }
+      if (!confirm('Delete user ID ' + id + '?')) return;
+      try {
+        const data = await callApi(api.delete, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id }) });
+        showMessage('Deleted: ' + JSON.stringify(data));
+      } catch (e){ showMessage(e.message); }
+    });
+
+    // Convenience buttons
+    document.getElementById('createBtn').addEventListener('click', ()=>{ document.getElementById('userId').value=''; document.getElementById('userName').focus(); });
+    document.getElementById('readBtn').addEventListener('click', ()=>document.getElementById('refreshBtn').click());
+    document.getElementById('updateBtn').addEventListener('click', ()=>{ document.getElementById('userId').focus(); });
+    document.getElementById('deleteBtn').addEventListener('click', ()=>{ document.getElementById('userId').focus(); });
+
+    // Helper to prefill form when clicking Edit
+    function fillForm(id, username, role){
+      document.getElementById('userId').value = id;
+      document.getElementById('userName').value = username;
+      document.getElementById('userRole').value = role;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // expose to inline onclick
+    window.fillForm = fillForm;
+
+    // initial attempt to load data
+    (function init(){ document.getElementById('refreshBtn').click(); })();
+  </script>
+</body>
+</html>

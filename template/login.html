@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SixSeven</title>
+    <style>
+        body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f5f7fa; }
+        .card { background:white; padding:20px 24px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); width:320px; }
+        .card h2 { margin:0 0 12px 0; font-size:18px; }
+        label { display:block; margin:8px 0 4px; font-size:13px; }
+        input[type="text"], input[type="password"], select { width:100%; padding:8px 10px; border:1px solid #ccd6e0; border-radius:6px; box-sizing:border-box; font-size:14px; }
+        button { width:100%; margin-top:14px; padding:10px; background:#2b78e4; color:white; border:none; border-radius:6px; cursor:pointer; font-size:15px; }
+        button:active { transform:translateY(1px); }
+        small.hint { color:#666; display:block; margin-top:8px; font-size:12px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Login</h2>
+        <form action="/login" method="POST">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" autocomplete="username" />
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" />
+
+            <label for="profiles">Profiles</label>
+            <select id="profiles" name="profiles" multiple size="4" aria-label="Select profiles">
+                <option value="Admin">Admin</option>
+                <option value="CSR Rep">CSR Rep</option>
+                <option value="PIN">PIN</option>
+                <option value="Platform Mangager">Platform Mangager</option>
+            </select>
+
+            <button type="submit">Login</button>
+            <small class="hint">Enter your username and password, choose the correct role</small>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const profiles = Array.from(document.getElementById('profiles').selectedOptions).map(o => o.value);
+
+            if (!username || !password) {
+                alert('Please enter both username and password.');
+                return;
+            }
+
+            // For demonstration only: show the entered values.
+            // Replace this with real authentication logic / POST to server.
+            alert('Logging in as: ' + username + '\nProfiles: ' + (profiles.length ? profiles.join(', ') : 'None'));
+        });
+    </script>
+</body>
+</html>
