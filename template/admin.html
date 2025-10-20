@@ -5,197 +5,629 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SixSeven — Admin</title>
   <style>
-    body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#f5f7fa; }
-    .card { background:white; padding:20px 24px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); width:720px; max-width:95%; }
-    .card h2 { margin:0 0 12px 0; font-size:20px; }
-    .row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
-    label { display:block; margin:6px 0 4px; font-size:13px; }
-    input[type="text"], select { padding:8px 10px; border:1px solid #ccd6e0; border-radius:6px; box-sizing:border-box; font-size:14px; }
-    input[type="text"] { width:240px; }
-    .btn { padding:8px 12px; background:#2b78e4; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
-    .btn.secondary { background:#6b7280; }
-    .btn.danger { background:#b00020; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; }
-    .form-grid { display:flex; gap:12px; margin-top:8px; }
-    .form-grid > div { flex:1; }
-    table { width:100%; border-collapse:collapse; margin-top:14px; font-size:14px; }
-    th, td { text-align:left; padding:8px; border-bottom:1px solid #eee; }
-    .hint { color:#666; font-size:12px; margin-top:8px; }
-    .small { font-size:13px; color:#333; }
+      body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; }
+      .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); width: 720px; max-width: 95%; position: relative; }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+      .header-left { display: flex; gap: 12px; align-items: center; }
+      .header h2 { margin: 0; font-size: 20px; }
+      .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; }
+      .action-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+      .action-row > div { flex: 1; }
+      label { display: block; margin-bottom: 4px; font-size: 13px; }
+      select, input[type="text"], input[type="password"], input[type="email"] { width: 100%; padding: 8px 10px; border: 1px solid #ccd6e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+      .btn { padding: 8px 16px; background: #2b78e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+      .btn.secondary { background: #6b7280; }
+      .btn.danger { background: #b00020; }
+      .btn.view { background: #28a745; }
+      .form-container { background: #f8f9fa; padding: 16px; border-radius: 6px; margin-bottom: 16px; display: none; }
+      .form-container.active { display: block; }
+      .form-fields { display: flex; gap: 12px; margin-bottom: 12px; }
+      .form-fields > div { flex: 1; }
+      .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+      .modal.active { display: flex; align-items: center; justify-content: center; }
+      .modal-content { background: white; border-radius: 8px; padding: 24px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .modal-header h3 { margin: 0; font-size: 18px; }
+      .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; }
+      .filter-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+      .filter-row > div:first-child { flex: 2; }
+      .filter-row > div:nth-child(2) { flex: 1; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+      th { background: #f8f9fa; }
+      .table-actions { display: flex; gap: 6px; }
+      .table-actions .btn { padding: 6px 12px; font-size: 13px; }
+      .hint { color: #666; font-size: 12px; margin-top: 16px; }
+      .section { display: none; }
+      .section.active { display: block; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Admin Panel</h2>
-
-    <div class="row">
-      <input id="searchInput" type="text" placeholder="Search users by username or role" />
-      <button class="btn" id="searchBtn">Search</button>
-      <button class="btn secondary" id="refreshBtn">Refresh</button>
+    <div class="header">
+      <div class="header-left">
+        <h2>Admin Panel</h2>
+        <select id="sectionSelect" style="width: auto; padding: 6px 10px;">
+          <option value="accounts">User Accounts</option>
+          <option value="profiles">User Profiles</option>
+        </select>
+      </div>
+      <a href="/logout" class="logout-btn">🚪 Logout</a>
     </div>
 
-    <div class="controls">
-      <button class="btn" id="createBtn">Create</button>
-      <button class="btn" id="readBtn">Read</button>
-      <button class="btn" id="updateBtn">Update</button>
-      <button class="btn danger" id="deleteBtn">Delete</button>
-    </div>
-
-    <form id="crudForm" style="margin-top:12px">
-      <div class="form-grid">
+    <!-- User Accounts Section -->
+    <div id="accountsSection" class="section active">
+      <div class="action-row">
         <div>
-          <label for="userId">ID (for update/delete)</label>
-          <input id="userId" name="id" type="text" placeholder="leave blank for create" />
-        </div>
-        <div>
-          <label for="userName">Username</label>
-          <input id="userName" name="username" type="text" />
-        </div>
-        <div>
-          <label for="userRole">Role</label>
-          <select id="userRole" name="role">
-            <option>Admin</option>
-            <option>CSR Rep</option>
-            <option>PIN</option>
-            <option>Platform Manager</option>
+          <label for="actionSelect">Select Action</label>
+          <select id="actionSelect">
+            <option value="">-- Choose an action --</option>
+            <option value="create">Create User</option>
+            <option value="update">Update User</option>
+            <option value="delete">Delete User</option>
           </select>
         </div>
+        <button class="btn view" id="viewBtn">View All Users</button>
       </div>
-      <div style="margin-top:10px">
-        <button class="btn" id="submitCreate" type="button">Submit Create</button>
-        <button class="btn secondary" id="submitUpdate" type="button">Submit Update</button>
-        <button class="btn danger" id="submitDelete" type="button">Submit Delete</button>
-      </div>
-    </form>
 
-    <div id="resultsArea">
-      <table id="resultsTable" aria-live="polite">
+      <!-- Create Form -->
+      <div id="createForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="createUsername">Username *</label>
+            <input type="text" id="createUsername" placeholder="Enter username" />
+          </div>
+          <div>
+            <label for="createPassword">Password *</label>
+            <input type="password" id="createPassword" placeholder="Enter password" />
+          </div>
+          <div>
+            <label for="createRole">Role *</label>
+            <select id="createRole">
+              <option>Admin</option>
+              <option>Csr_Rep</option>
+              <option>PIN_Support</option>
+              <option>Platform_Manager</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+          <button class="btn" onclick="submitCreate()">Create User</button>
+        </div>
+      </div>
+
+      <!-- Update Form -->
+      <div id="updateForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="updateId">User ID *</label>
+            <input type="text" id="updateId" placeholder="Enter user ID" />
+          </div>
+          <div>
+            <label for="updateUsername">Username</label>
+            <input type="text" id="updateUsername" placeholder="New username" />
+          </div>
+          <div>
+            <label for="updatePassword">Password</label>
+            <input type="password" id="updatePassword" placeholder="New password (leave blank to keep current)" />
+          </div>
+          <div>
+            <label for="updateRole">Role</label>
+            <select id="updateRole">
+              <option>Admin</option>
+              <option>Csr_Rep</option>
+              <option>PIN_Support</option>
+              <option>Platform_Manager</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+          <button class="btn" onclick="submitUpdate()">Update User</button>
+        </div>
+      </div>
+
+      <!-- Delete Form -->
+      <div id="deleteForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="deleteId">User ID *</label>
+            <input type="text" id="deleteId" placeholder="Enter user ID to delete" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+          <button class="btn danger" onclick="submitDelete()">Delete User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Profiles Section -->
+    <div id="profilesSection" class="section">
+      <div class="action-row">
+        <div>
+          <label for="profileActionSelect">Select Action</label>
+          <select id="profileActionSelect">
+            <option value="">-- Choose an action --</option>
+            <option value="updateProfile">Update Profile</option>
+          </select>
+        </div>
+        <button class="btn view" id="viewProfilesBtn">View All Profiles</button>
+      </div>
+
+      <!-- Update Profile Form -->
+      <div id="updateProfileForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="profileUpdateId">User ID *</label>
+            <input type="text" id="profileUpdateId" placeholder="Enter user ID" />
+          </div>
+          <div>
+            <label for="profileFullName">Full Name</label>
+            <input type="text" id="profileFullName" placeholder="Enter full name" />
+          </div>
+          <div>
+            <label for="profileEmail">Email</label>
+            <input type="email" id="profileEmail" placeholder="Enter email" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelProfileAction()">Cancel</button>
+          <button class="btn" onclick="submitProfileUpdate()">Update Profile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Users Modal -->
+  <div id="viewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>All Users</h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <div class="filter-row">
+        <div>
+          <label for="filterSearch">Search</label>
+          <input type="text" id="filterSearch" placeholder="Search by username or ID" />
+        </div>
+        <div>
+          <label for="filterRole">Filter by Role</label>
+          <select id="filterRole">
+            <option value="">All Roles</option>
+            <option>Admin</option>
+            <option>Csr_Rep</option>
+            <option>PIN_Support</option>
+            <option>Platform_Manager</option>
+          </select>
+        </div>
+        <button class="btn" onclick="applyFilters()">Apply</button>
+        <button class="btn secondary" onclick="loadAllUsers()">Reset</button>
+      </div>
+
+      <table>
         <thead>
-          <tr><th>ID</th><th>Username</th><th>Role</th><th>Actions</th></tr>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
         </thead>
-        <tbody>
-          <!-- rows injected here -->
+        <tbody id="userTableBody">
+          <tr><td colspan="4">Loading...</td></tr>
         </tbody>
       </table>
     </div>
+  </div>
 
-    <div class="hint">Actions call placeholder endpoints. Hook to your Flask API (/admin/create, /admin/read, /admin/update, /admin/delete, /admin/search).</div>
+  <!-- View Profiles Modal -->
+  <div id="viewProfilesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>All User Profiles</h3>
+        <button class="close-btn" onclick="closeProfilesModal()">&times;</button>
+      </div>
+      
+      <div class="filter-row">
+        <div>
+          <label for="profileFilterSearch">Search</label>
+          <input type="text" id="profileFilterSearch" placeholder="Search by name, email or ID" />
+        </div>
+        <button class="btn" onclick="applyProfileFilters()">Apply</button>
+        <button class="btn secondary" onclick="loadAllProfiles()">Reset</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="profileTableBody">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
     const api = {
       create: '/admin/api/create',
-      read:   '/admin/api/read',
+      read: '/admin/api/read',
       update: '/admin/api/update',
       delete: '/admin/api/delete',
-      search: '/admin/api/search'
+      profileRead: '/admin/api/profiles/read',
+      profileUpdate: '/admin/api/profiles/update'
     };
 
-    // Utility: render simple table rows
-    function renderResults(items){
-      const tbody = document.querySelector('#resultsTable tbody');
-      tbody.innerHTML = '';
-      if(!items || items.length === 0){
-        tbody.innerHTML = '<tr><td colspan="4" style="color:#666">No results</td></tr>';
+    let allUsers = [];
+    let allProfiles = [];
+
+    // Section switching
+    document.getElementById('sectionSelect').addEventListener('change', function() {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      if (this.value === 'accounts') {
+        document.getElementById('accountsSection').classList.add('active');
+      } else if (this.value === 'profiles') {
+        document.getElementById('profilesSection').classList.add('active');
+      }
+      cancelAction();
+      cancelProfileAction();
+    });
+
+    // User Accounts functionality
+    document.getElementById('actionSelect').addEventListener('change', function() {
+      document.querySelectorAll('#accountsSection .form-container').forEach(f => f.classList.remove('active'));
+      if (this.value) {
+        document.getElementById(this.value + 'Form').classList.add('active');
+      }
+    });
+
+    function cancelAction() {
+      document.getElementById('actionSelect').value = '';
+      document.querySelectorAll('#accountsSection .form-container').forEach(f => f.classList.remove('active'));
+      document.getElementById('createUsername').value = '';
+      document.getElementById('createPassword').value = '';
+      document.getElementById('updateId').value = '';
+      document.getElementById('updateUsername').value = '';
+      document.getElementById('updatePassword').value = '';
+      document.getElementById('deleteId').value = '';
+    }
+
+    document.getElementById('viewBtn').addEventListener('click', function() {
+      document.getElementById('viewModal').classList.add('active');
+      loadAllUsers();
+    });
+
+    function closeModal() {
+      document.getElementById('viewModal').classList.remove('active');
+    }
+
+    document.getElementById('viewModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // User Profiles functionality
+    document.getElementById('profileActionSelect').addEventListener('change', function() {
+      document.querySelectorAll('#profilesSection .form-container').forEach(f => f.classList.remove('active'));
+      if (this.value) {
+        document.getElementById(this.value + 'Form').classList.add('active');
+      }
+    });
+
+    function cancelProfileAction() {
+      document.getElementById('profileActionSelect').value = '';
+      document.querySelectorAll('#profilesSection .form-container').forEach(f => f.classList.remove('active'));
+      document.getElementById('profileUpdateId').value = '';
+      document.getElementById('profileFullName').value = '';
+      document.getElementById('profileEmail').value = '';
+    }
+
+    document.getElementById('viewProfilesBtn').addEventListener('click', function() {
+      document.getElementById('viewProfilesModal').classList.add('active');
+      loadAllProfiles();
+    });
+
+    function closeProfilesModal() {
+      document.getElementById('viewProfilesModal').classList.remove('active');
+    }
+
+    document.getElementById('viewProfilesModal').addEventListener('click', function(e) {
+      if (e.target === this) closeProfilesModal();
+    });
+
+    async function callApi(path, opts) {
+      try {
+        const res = await fetch(path, opts);
+        if (!res.ok) {
+          const text = await res.text().catch(() => res.statusText);
+          throw new Error(text || 'Request failed');
+        }
+        return await res.json().catch(() => null);
+      } catch (err) {
+        throw new Error('API call failed: ' + err.message);
+      }
+    }
+
+    // User Accounts CRUD
+    async function submitCreate() {
+      const username = document.getElementById('createUsername').value.trim();
+      const password = document.getElementById('createPassword').value;
+      const role = document.getElementById('createRole').value;
+      
+      if (!username || !password) {
+        alert('Please enter both username and password');
         return;
       }
-      items.forEach(it => {
+
+      try {
+        await callApi(api.create, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, role })
+        });
+        alert('User created successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function submitUpdate() {
+      const id = document.getElementById('updateId').value.trim();
+      const username = document.getElementById('updateUsername').value.trim();
+      const password = document.getElementById('updatePassword').value;
+      const role = document.getElementById('updateRole').value;
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
+      try {
+        await callApi(api.update, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, username, password, role })
+        });
+        alert('User updated successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function submitDelete() {
+      const id = document.getElementById('deleteId').value.trim();
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
+      if (!confirm('Delete user ID ' + id + '?')) return;
+
+      try {
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User deleted successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function loadAllUsers() {
+      try {
+        const data = await callApi(api.read, { method: 'GET' });
+        allUsers = data || [];
+        renderUsers(allUsers);
+        document.getElementById('filterSearch').value = '';
+        document.getElementById('filterRole').value = '';
+      } catch (e) {
+        alert(e.message);
+        renderUsers([]);
+      }
+    }
+
+    function applyFilters() {
+      const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase();
+      const roleFilter = document.getElementById('filterRole').value;
+
+      let filtered = allUsers;
+
+      if (searchTerm) {
+        filtered = filtered.filter(u => 
+          String(u.id).includes(searchTerm) || 
+          u.username.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (roleFilter) {
+        filtered = filtered.filter(u => u.role === roleFilter);
+      }
+
+      renderUsers(filtered);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '';
+
+      if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No users found</td></tr>';
+        return;
+      }
+
+      users.forEach(user => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${it.id}</td><td>${escapeHtml(it.username)}</td><td>${escapeHtml(it.role)}</td>
-          <td>
-            <button class="btn secondary" data-id="${it.id}" onclick="fillForm(${it.id}, '${escapeJs(it.username)}', '${escapeJs(it.role)}')">Edit</button>
-          </td>`;
+        tr.innerHTML = `
+          <td>${escapeHtml(user.id)}</td>
+          <td>${escapeHtml(user.username)}</td>
+          <td>${escapeHtml(user.role)}</td>
+          <td class="table-actions">
+            <button class="btn secondary" onclick="editUser(${user.id}, '${escapeJs(user.username)}', '${escapeJs(user.role)}')">Edit</button>
+            <button class="btn danger" onclick="quickDelete(${user.id})">Delete</button>
+          </td>
+        `;
         tbody.appendChild(tr);
       });
     }
 
-    // Basic escaping helpers
-    function escapeHtml(s){ return String(s || '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function escapeJs(s){ return String(s || '').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+    function editUser(id, username, role) {
+      closeModal();
+      document.getElementById('sectionSelect').value = 'accounts';
+      document.getElementById('accountsSection').classList.add('active');
+      document.getElementById('profilesSection').classList.remove('active');
+      document.getElementById('actionSelect').value = 'update';
+      document.getElementById('updateForm').classList.add('active');
+      document.getElementById('updateId').value = id;
+      document.getElementById('updateUsername').value = username;
+      document.getElementById('updatePassword').value = '';
+      document.getElementById('updateRole').value = role;
+    }
 
-    function showMessage(msg){ alert(msg); }
-
-    // Placeholder fetch wrapper: tries real endpoint, falls back to simulated data if 404 or network error
-    async function callApi(path, opts){
+    async function quickDelete(id) {
+      if (!confirm('Delete user ID ' + id + '?')) return;
+      
       try {
-        const res = await fetch(path, opts);
-        if (!res.ok) {
-          const text = await res.text().catch(()=>res.statusText);
-          throw new Error(text || 'Request failed');
-        }
-        return await res.json().catch(()=>null);
-      } catch (err) {
-        // fallback: signal to implement backend
-        throw new Error('API call failed. Implement ' + path + ' on the server. (' + err.message + ')');
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User deleted successfully!');
+        loadAllUsers();
+      } catch (e) {
+        alert(e.message);
       }
     }
 
-    // CRUD handlers
-    document.getElementById('searchBtn').addEventListener('click', async () => {
-      const q = document.getElementById('searchInput').value.trim();
+    // User Profiles CRUD
+    async function submitProfileUpdate() {
+      const id = document.getElementById('profileUpdateId').value.trim();
+      const fullName = document.getElementById('profileFullName').value.trim();
+      const email = document.getElementById('profileEmail').value.trim();
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
       try {
-        const data = await callApi(api.search + '?q=' + encodeURIComponent(q), { method: 'GET' });
-        renderResults(data || []);
-      } catch (e) { showMessage(e.message); }
-    });
-
-    document.getElementById('refreshBtn').addEventListener('click', async () => {
-      try {
-        const data = await callApi(api.read, { method: 'GET' });
-        renderResults(data || []);
-      } catch (e) { showMessage(e.message); }
-    });
-
-    document.getElementById('submitCreate').addEventListener('click', async () => {
-      const username = document.getElementById('userName').value.trim();
-      const role = document.getElementById('userRole').value;
-      if (!username){ showMessage('Enter username'); return; }
-      try {
-        const data = await callApi(api.create, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, role }) });
-        showMessage('Created: ' + JSON.stringify(data));
-      } catch (e){ showMessage(e.message); }
-    });
-
-    document.getElementById('submitUpdate').addEventListener('click', async () => {
-      const id = document.getElementById('userId').value.trim();
-      const username = document.getElementById('userName').value.trim();
-      const role = document.getElementById('userRole').value;
-      if (!id){ showMessage('Enter ID to update'); return; }
-      try {
-        const data = await callApi(api.update, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, username, role }) });
-        showMessage('Updated: ' + JSON.stringify(data));
-      } catch (e){ showMessage(e.message); }
-    });
-
-    document.getElementById('submitDelete').addEventListener('click', async () => {
-      const id = document.getElementById('userId').value.trim();
-      if (!id){ showMessage('Enter ID to delete'); return; }
-      if (!confirm('Delete user ID ' + id + '?')) return;
-      try {
-        const data = await callApi(api.delete, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id }) });
-        showMessage('Deleted: ' + JSON.stringify(data));
-      } catch (e){ showMessage(e.message); }
-    });
-
-    // Convenience buttons
-    document.getElementById('createBtn').addEventListener('click', ()=>{ document.getElementById('userId').value=''; document.getElementById('userName').focus(); });
-    document.getElementById('readBtn').addEventListener('click', ()=>document.getElementById('refreshBtn').click());
-    document.getElementById('updateBtn').addEventListener('click', ()=>{ document.getElementById('userId').focus(); });
-    document.getElementById('deleteBtn').addEventListener('click', ()=>{ document.getElementById('userId').focus(); });
-
-    // Helper to prefill form when clicking Edit
-    function fillForm(id, username, role){
-      document.getElementById('userId').value = id;
-      document.getElementById('userName').value = username;
-      document.getElementById('userRole').value = role;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+        await callApi(api.profileUpdate, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, full_name: fullName, email })
+        });
+        alert('Profile updated successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
     }
 
-    // expose to inline onclick
-    window.fillForm = fillForm;
+    async function loadAllProfiles() {
+      try {
+        const data = await callApi(api.profileRead, { method: 'GET' });
+        allProfiles = data || [];
+        renderProfiles(allProfiles);
+        document.getElementById('profileFilterSearch').value = '';
+      } catch (e) {
+        alert(e.message);
+        renderProfiles([]);
+      }
+    }
 
-    // initial attempt to load data
-    (function init(){ document.getElementById('refreshBtn').click(); })();
+    function applyProfileFilters() {
+      const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
+
+      let filtered = allProfiles;
+
+      if (searchTerm) {
+        filtered = filtered.filter(u => 
+          String(u.id).includes(searchTerm) || 
+          (u.username && u.username.toLowerCase().includes(searchTerm)) ||
+          (u.full_name && u.full_name.toLowerCase().includes(searchTerm)) ||
+          (u.email && u.email.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      renderProfiles(filtered);
+    }
+
+    function renderProfiles(profiles) {
+      const tbody = document.getElementById('profileTableBody');
+      tbody.innerHTML = '';
+
+      if (!profiles || profiles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No profiles found</td></tr>';
+        return;
+      }
+
+      profiles.forEach(profile => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(profile.id)}</td>
+          <td>${escapeHtml(profile.username || 'N/A')}</td>
+          <td>${escapeHtml(profile.full_name || 'N/A')}</td>
+          <td>${escapeHtml(profile.email || 'N/A')}</td>
+          <td class="table-actions">
+            <button class="btn secondary" onclick="editProfile(${profile.id}, '${escapeJs(profile.full_name || '')}', '${escapeJs(profile.email || '')}')">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editProfile(id, fullName, email) {
+      closeProfilesModal();
+      document.getElementById('sectionSelect').value = 'profiles';
+      document.getElementById('accountsSection').classList.remove('active');
+      document.getElementById('profilesSection').classList.add('active');
+      document.getElementById('profileActionSelect').value = 'updateProfile';
+      document.getElementById('updateProfileForm').classList.add('active');
+      document.getElementById('profileUpdateId').value = id;
+      document.getElementById('profileFullName').value = fullName;
+      document.getElementById('profileEmail').value = email;
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function escapeJs(s) {
+      return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    window.cancelAction = cancelAction;
+    window.submitCreate = submitCreate;
+    window.submitUpdate = submitUpdate;
+    window.submitDelete = submitDelete;
+    window.closeModal = closeModal;
+    window.loadAllUsers = loadAllUsers;
+    window.applyFilters = applyFilters;
+    window.editUser = editUser;
+    window.quickDelete = quickDelete;
+    window.cancelProfileAction = cancelProfileAction;
+    window.submitProfileUpdate = submitProfileUpdate;
+    window.closeProfilesModal = closeProfilesModal;
+    window.loadAllProfiles = loadAllProfiles;
+    window.applyProfileFilters = applyProfileFilters;
+    window.editProfile = editProfile;
   </script>
 </body>
 </html>

@@ -6,31 +6,43 @@
     <title>SixSeven</title>
     <style>
         body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f5f7fa; }
-        .card { background:white; padding:20px 24px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); width:320px; }
+        .card { background:white; padding:20px 24px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); width:320px; position: relative; }
         .card h2 { margin:0 0 12px 0; font-size:18px; }
+        .home-button { position: absolute; top: 20px; right: 24px; background: none; border: none; cursor: pointer; font-size: 18px; color: #2b78e4; text-decoration: none; padding: 4px; }
+        .home-button:hover { color: #1a5bb8; }
         label { display:block; margin:8px 0 4px; font-size:13px; }
         input[type="text"], input[type="password"], select { width:100%; padding:8px 10px; border:1px solid #ccd6e0; border-radius:6px; box-sizing:border-box; font-size:14px; }
         button { width:100%; margin-top:14px; padding:10px; background:#2b78e4; color:white; border:none; border-radius:6px; cursor:pointer; font-size:15px; }
         button:active { transform:translateY(1px); }
         small.hint { color:#666; display:block; margin-top:8px; font-size:12px; }
+        .flash-messages { margin-bottom: 15px; }
+        .flash-message { padding: 10px; border-radius: 4px; margin-bottom: 5px; }
+        .flash-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .logout-btn {background: #dc3545;color: white;padding: 10px 20px;position: absolute; top: 20px; right: 24px; text-decoration: none;border-radius: 6px;display: inline-block;border: none;cursor: pointer;font-size: 14px;transition: background 0.3s;}
+        .logout-btn:hover {background: #c82333;}
     </style>
 </head>
+<a href="/logout" class="logout-btn">🚪 Logout
+</a>
 <body>
     <div class="card">
         <h2>Login</h2>
-        <form action="/login" method="POST">
+        <a href="/" class="home-button">🏠</a>
+        <form id="loginForm" action="/login" method="POST">
             <label for="username">Username</label>
-            <input id="username" name="username" type="text" autocomplete="username" />
+            <input id="username" name="username" type="text" autocomplete="username" required />
 
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" />
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
 
             <label for="profiles">Profiles</label>
-            <select id="profiles" name="profiles" multiple size="4" aria-label="Select profiles">
+            <select id="profiles" name="profiles" required>
+                <option value="">Select a profile</option>
                 <option value="Admin">Admin</option>
-                <option value="CSR Rep">CSR Rep</option>
-                <option value="PIN">PIN</option>
-                <option value="Platform Mangager">Platform Mangager</option>
+                <option value="Platform_Manager">Platform Manager</option>
+                <option value="Csr_Rep">CSR Rep</option>
+                <option value="PIN_Support">PIN</option>
             </select>
 
             <button type="submit">Login</button>
@@ -39,21 +51,17 @@
     </div>
 
     <script>
+        // Remove the preventDefault to allow form submission
         const form = document.getElementById('loginForm');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
+        form.addEventListener('submit', function(e) {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const profiles = Array.from(document.getElementById('profiles').selectedOptions).map(o => o.value);
-
-            if (!username || !password) {
-                alert('Please enter both username and password.');
-                return;
+            const profile = document.getElementById('profiles').value;
+            
+            if (!username || !password || !profile) {
+                e.preventDefault();
+                alert('Please fill in all fields.');
             }
-
-            // For demonstration only: show the entered values.
-            // Replace this with real authentication logic / POST to server.
-            alert('Logging in as: ' + username + '\nProfiles: ' + (profiles.length ? profiles.join(', ') : 'None'));
         });
     </script>
 </body>
