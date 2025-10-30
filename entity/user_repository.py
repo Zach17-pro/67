@@ -13,9 +13,12 @@ class UserRepository:
         )
         row = cur.fetchone()
         cur.close()
-        return UserProfile(id=row["user_id"], username=row['username']
+        if not(row):
+            return None
+        user = UserProfile(id=row["user_id"], username=row['username']
                            , full_name=row['full_name'], role=row['role']
                            , email=row['email'], created_at=row['created_at'])
+        return user
 
     def list_users(self):
         cur = self.db.cursor(dictionary=True)

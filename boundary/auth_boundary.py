@@ -26,8 +26,8 @@ def login():
     user = controller().authenticate(username=username, password=password, role=profile)
     if user:
         session["user"] = user
-        flash(f"Welcome, {user['full_name']} ({user['role']})!")
-        endpoint = controller().role_endpoint_for(user["role"])
+        flash(f"Welcome, {user.full_name} ({user.role})!")
+        endpoint = controller().role_endpoint_for(user.role)
         return redirect(url_for(endpoint)) if endpoint else redirect(url_for("auth.home"))
     flash("Invalid credentials!")
     return redirect(url_for("auth.home"))

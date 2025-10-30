@@ -5,16 +5,11 @@ class AuthController:
     def __init__(self, repo: UserRepository):
         self.repo = repo
 
-    def authenticate(self, username: str, password: str, role: str) -> Optional[Dict[str, Any]]:
+    def authenticate(self, username: str, password: str, role: str):
         user = self.repo.get_user_by_credentials(username, password, role)
         if not user:
             return None
-        return {
-            "id": user["user_id"],
-            "username": user["username"],
-            "full_name": user["full_name"],
-            "role": user["role"],
-        }
+        return user
 
     def role_endpoint_for(self, role: str) -> Optional[str]:
         mapping = {
