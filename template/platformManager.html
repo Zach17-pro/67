@@ -26,6 +26,8 @@
     .category-item span { font-size: 15px; color: #374151; font-weight: 500; }
     .delete-btn { background: #ef4444; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
     .delete-btn:hover { background: #dc2626; }
+    .edit-btn { background: #10b981; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
+    .edit-btn:hover { background: #0ea371; }
     .add-btn { background: #e5e7eb; color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; width: 100%; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); margin-top: 16px; }
     .add-btn:hover { background: #e5e7eb79; }
     .new-category-form { display: none; margin-top: 16px; background: #eff6ff; padding: 20px; border-radius: 12px; border: 2px solid #dbeafe; }
@@ -70,7 +72,7 @@
 // Fetch categories from backend
 async function loadCategories() {
     try {
-        const res = await fetch('/platform_manager/api/read');
+        const res = await fetch('/api/platform_manager');
         if (!res.ok) throw new Error('Failed to fetch categories');
         const categories = await res.json();
         const container = document.getElementById('categories');
@@ -86,7 +88,10 @@ async function loadCategories() {
             div.className = 'category-item';
             div.innerHTML = `
                 <span>${cat.name}</span>
-                <button class="delete-btn" onclick="deleteCategory(${cat.id})">Delete</button>
+                <div class="actions">
+                  <button class="edit-btn" onclick="editCategory(${cat.id})">Edit</button>
+                  <button class="delete-btn" onclick="deleteCategory(${cat.id})">Delete</button>
+                </div>
             `;
             container.appendChild(div);
         });
@@ -95,6 +100,32 @@ async function loadCategories() {
         document.getElementById('categories').innerHTML = '<div class="category-item">Error loading categories</div>';
     }
 }
+
+// Inline edit flow
+async function editCategory(id, currentName) {
+    const next = prompt('Edit category name:', currentName || '');
+    if (next === null) return;
+    const newName = next.trim();
+    if (!newName) return alert('Please enter a category name');
+
+    try {
+        const res = await fetch('/api/platform_manager', {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id: id, category_name: newName })
+        });
+        const data = await res.json();
+        if (data.success) {
+            loadCategories();
+        } else {
+            alert(data.error || 'Error updating category');
+        }
+    } catch (err) {
+        console.error('Error updating category:', err);
+        alert('Error updating category');
+    }
+}
+
 
 // Search categories
 function searchCategories() {
@@ -121,7 +152,7 @@ async function addCategory() {
     if (!name) return alert('Please enter a category name');
     
     try {
-        const res = await fetch('/platform_manager/api/create', {
+        const res = await fetch('/api/platform_manager', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({category_name: name})
@@ -144,7 +175,7 @@ async function addCategory() {
 // Delete category
 async function deleteCategory(id) {    
     try {
-        const res = await fetch('/platform_manager/api/delete', {
+        const res = await fetch('/api/platform_manager', {
             method: 'DELETE',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({id: id})
