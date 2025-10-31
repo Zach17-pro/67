@@ -21,6 +21,7 @@ from boundary.auth_boundary import auth_api
 from boundary.role_page_boundary import role_page_api
 from boundary.health_boundary import health_api
 from boundary.platform_manager_boundary import pm_api
+# oppstoppas PIN boundary
 
 app.register_blueprint(auth_api)
 app.register_blueprint(role_page_api)
