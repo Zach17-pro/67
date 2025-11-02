@@ -38,6 +38,7 @@ class UserController:
 
     #5 As a user admin, I want to delete user accounts so that unused or invalid accounts are removed.
     def delete_user(self, user_id: int):
+         #Return confirmation dictionary from repository
         return self.repo.delete_user(user_id)
 
     #6 As a user admin, I want to search for user accounts so that I can quickly locate them.
@@ -46,6 +47,7 @@ class UserController:
         all_users = self.repo.list_users()
         return [
             u for u in all_users
+            # Uses case-insensitive search logic from repository
             if keyword.lower() in u.username.lower() or keyword.lower() in u.role.lower()
         ]
         
@@ -55,7 +57,7 @@ class UserController:
     
     #7 As a user admin, I want to create user profiles so that users’ details are recorded.
     def create_profile(self, username: str, full_name: str, email: str):
-        return self.repo.create_user(username=username, password="default123", role="user", full_name=full_name)
+        return self.repo.create_profile(username, full_name, email)
     
     #8 As a user admin, I want to view user profiles so that I can check stored information.
     def list_profiles(self):
@@ -67,7 +69,8 @@ class UserController:
 
     #10 As a user admin, I want to delete user profiles so that invalid records are removed.
     def delete_profile(self, user_id: int):
-        return self.repo.delete_user(user_id)
+        # Return confirmation dictionary from repository
+        return self.repo.delete_profile(user_id)
 
     #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
     def search_profiles(self, keyword: str):

@@ -82,16 +82,20 @@ class UserRepository:
         cur.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
         self.db.commit()
         cur.close()
+        
+        # Return confirmation dictionary
+        return {"success": True, "deleted_user_id": user_id}
 
     #6 As a user admin, I want to search for user accounts so that I can quickly locate them.
     def search_users(self, keyword: str):
         cur = self.db.cursor(dictionary=True)
         search_term = f"%{keyword}%"
-        cur.execute(
-            "SELECT user_id AS id, username, role FROM user WHERE username LIKE %s OR role LIKE %s",
+        cur.execute("""SELECT user_id AS id, username, role
+            FROM user
+            WHERE LOWER(username) LIKE %s
+               OR LOWER(role) LIKE %s""",
             (search_term, search_term),
         )
-        
         rows = cur.fetchall()
         cur.close()
         return [UserProfile(id=row["id"], username=row['username'], role=row['role']) for row in rows]
@@ -121,27 +125,49 @@ class UserRepository:
         cur.execute("SELECT user_id AS id, username, full_name, email FROM user")
         rows = cur.fetchall()
         cur.close()
-        categories = [UserProfile(id=row["id"], username=row["username"], full_name=row["full_name"], email=row["email"]) for row in rows]
+        categories = [UserProfile(
+            id=row["id"], 
+            username=row["username"], 
+            full_name=row["full_name"], 
+            email=row["email"]) for row in rows]
         return categories
 
     #9 As a user admin, I want to update user profiles so that details remain current.
     def update_profile(self, user_id: int, full_name: str, email: Optional[str]):
         cur = self.db.cursor()
-        cur.execute(
-            "UPDATE user SET full_name = %s, email = %s WHERE user_id = %s",
+        cur.execute("UPDATE user SET full_name = %s, email = %s WHERE user_id = %s",
             (full_name, email, user_id),
         )
         self.db.commit()
         cur.close()
     
+    #10 As a user admin, I want to delete user profiles so that invalid records are removed.    
+    def delete_profile(self, user_id: int):
+        cur = self.db.cursor()
+        cur.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
+        self.db.commit()
+        cur.close()
+        
+        # Return confirmation dictionary
+        return {"success": True, "deleted_user_id": user_id}
+    
     #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
     def search_profiles(self, keyword: str):
         cur = self.db.cursor(dictionary=True)
         search_term = f"%{keyword}%"
-        cur.execute(
-            "SELECT user_id AS id, username, full_name, email FROM user WHERE username LIKE %s OR full_name LIKE %s OR email LIKE %s",
+        cur.execute("""SELECT user_id AS id, username, full_name, email 
+            FROM user 
+            WHERE LOWER(username) LIKE %s 
+                OR LOWER(full_name) LIKE %s
+                OR LOWER(email) LIKE %s """,
             (search_term, search_term, search_term),
         )
         rows = cur.fetchall()
         cur.close()
-        return [UserProfile(id=row["id"], username=row["username"], full_name=row["full_name"], email=row["email"]) for row in rows]
+        return [
+            UserProfile(id=row["id"], 
+                        username=row["username"], 
+                        full_name=row["full_name"], 
+                        email=row["email"]
+                        ) for row in rows
+            ]

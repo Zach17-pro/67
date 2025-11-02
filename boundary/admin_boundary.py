@@ -165,8 +165,8 @@ def delete_profile():
         if not user_id:
             return jsonify({"error": "User ID is required"}), 400
 
-        controller().delete_profile(user_id)
-        return jsonify({"success": True})
+        result = controller().delete_profile(user_id)
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
