@@ -129,20 +129,20 @@
         </div>
       </div>
 
-      <!-- Delete Form -->
-      <div id="deleteForm" class="form-container">
-        <div class="form-fields">
-          <div>
-            <label for="deleteId">User ID *</label>
-            <input type="text" id="deleteId" placeholder="Enter user ID to delete" />
+        <!-- Delete Form -->
+        <div id="deleteForm" class="form-container">
+          <div class="form-fields">
+            <div>
+              <label for="deleteId">User ID *</label>
+              <input type="text" id="deleteId" placeholder="Enter user ID to delete" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+            <button class="btn danger" onclick="submitDelete()">Delete User</button>
           </div>
         </div>
-        <div class="form-actions">
-          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-          <button class="btn danger" onclick="submitDelete()">Delete User</button>
-        </div>
       </div>
-    </div>
 
     <!-- User Profiles Section -->
     <div id="profilesSection" class="section">
@@ -151,10 +151,34 @@
           <label for="profileActionSelect">Select Action</label>
           <select id="profileActionSelect">
             <option value="">-- Choose an action --</option>
+            <option value="createProfile">Create Profile</option>
             <option value="updateProfile">Update Profile</option>
+            <option value="deleteProfile">Delete Profile</option>
           </select>
         </div>
         <button class="btn view" id="viewProfilesBtn">View All Profiles</button>
+      </div>
+
+      <!-- Create Profile Form -->
+      <div id="createProfileForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="createProfileUsername">Username *</label>
+            <input type="text" id="createProfileUsername" placeholder="Enter username" />
+          </div>
+          <div>
+            <label for="createProfileFullName">Full Name *</label>
+            <input type="text" id="createProfileFullName" placeholder="Enter full name" />
+          </div>
+          <div>
+            <label for="createProfileEmail">Email *</label>
+            <input type="email" id="createProfileEmail" placeholder="Enter email address" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelProfileAction()">Cancel</button>
+          <button class="btn" onclick="submitProfileCreate()">Create User Profile</button>
+        </div>
       </div>
 
       <!-- Update Profile Form -->
@@ -178,8 +202,22 @@
           <button class="btn" onclick="submitProfileUpdate()">Update Profile</button>
         </div>
       </div>
+
+    <!-- Delete Profile Form -->
+    <div id="deleteProfileForm" class="form-container">
+      <div class="form-fields">
+        <div>
+          <label for="deleteProfileId">User ID *</label>
+          <input type="text" id="deleteProfileId" placeholder="Enter user ID to delete" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn secondary" onclick="cancelProfileAction()">Cancel</button>
+        <button class="btn danger" onclick="submitProfileDelete()">Delete User Profile</button>
+      </div>
     </div>
   </div>
+
 
   <!-- View Users Modal -->
   <div id="viewModal" class="modal">
@@ -264,8 +302,10 @@
       read: '/api/admin',
       update: '/api/admin',
       delete: '/api/admin',
+      profileCreate: '/api/admin/profile',
       profileRead: '/api/admin/profile',
-      profileUpdate: '/api/admin/profile'
+      profileUpdate: '/api/admin/profile',
+      profileDelete: '/api/admin/profile'
     };
 
     let allUsers = [];
@@ -329,6 +369,11 @@
       document.getElementById('profileUpdateId').value = '';
       document.getElementById('profileFullName').value = '';
       document.getElementById('profileEmail').value = '';
+
+      document.getElementById('createProfileUsername').value = '';
+      document.getElementById('createProfileFullName').value = '';
+      document.getElementById('createProfileEmail').value = '';
+      document.getElementById('deleteProfileId').value = '';
     }
 
     document.getElementById('viewProfilesBtn').addEventListener('click', function() {
@@ -514,6 +559,30 @@
       }
     }
 
+    // Create new user profile
+    async function submitProfileCreate() {
+      const username = document.getElementById('createProfileUsername').value.trim();
+      const full_name = document.getElementById('createProfileFullName').value.trim();
+      const email = document.getElementById('createProfileEmail').value.trim();
+
+      if (!username || !full_name) {
+        alert('Username and full name are required');
+        return;
+      }
+
+      try {
+        await callApi(api.profileCreate, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, full_name, email })
+        });
+        alert('Profile created successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
     // User Profiles CRUD
     async function submitProfileUpdate() {
       const id = document.getElementById('profileUpdateId').value.trim();
@@ -533,6 +602,46 @@
         });
         alert('Profile updated successfully!');
         cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    // Delete user profile
+    async function submitProfileDelete() {
+      const id = document.getElementById('deleteProfileId').value.trim();
+
+      if (!id) {
+        alert('Please enter a user profile ID');
+        return;
+      }
+
+      if (!confirm('Delete user profile ID ' + id + '?')) return;
+
+      try {
+        await callApi(api.profileDelete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('Profile deleted successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function quickProfileDelete(id) {
+      if (!confirm('Delete user ID ' + id + '?')) return;
+      
+      try {
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User Profile deleted successfully!');
+        loadAllProfiles();
       } catch (e) {
         alert(e.message);
       }
@@ -585,6 +694,7 @@
           <td>${escapeHtml(profile.email || 'N/A')}</td>
           <td class="table-actions">
             <button class="btn secondary" onclick="editProfile(${profile.id}, '${escapeJs(profile.full_name || '')}', '${escapeJs(profile.email || '')}')">Edit</button>
+            <button class="btn danger" onclick="quickProfileDelete(${profile.id})">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -623,11 +733,14 @@
     window.editUser = editUser;
     window.quickDelete = quickDelete;
     window.cancelProfileAction = cancelProfileAction;
+    window.submitProfileCreate = submitProfileCreate;
+    window.submitProfileDelete = submitProfileDelete;
     window.submitProfileUpdate = submitProfileUpdate;
     window.closeProfilesModal = closeProfilesModal;
     window.loadAllProfiles = loadAllProfiles;
     window.applyProfileFilters = applyProfileFilters;
     window.editProfile = editProfile;
+    window.quickProfileDelete = quickProfileDelete;
   </script>
 </body>
 </html>
