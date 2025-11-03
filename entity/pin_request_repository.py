@@ -15,7 +15,7 @@
 
 from typing import List, Optional, Any, Dict
 from datetime import datetime
-from entity.request import Request
+from entity.pin_request import Request
 from entity.match_repository import MatchRepository
 
 

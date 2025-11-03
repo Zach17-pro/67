@@ -5,9 +5,9 @@ from flask import Blueprint, jsonify, request, current_app
 from dataclasses import asdict
 from typing import Any, Dict, List
 
-from entity.request_repository import RequestRepository
+from entity.pin_request_repository import RequestRepository
 from entity.match_repository import MatchRepository  # optional if you later add endpoints here
-from app.controllers.pin_request_controller import PinRequestController
+from control.pin_request_controller import PinRequestController
 
 pin_req_api = Blueprint("pin_request_api", __name__, url_prefix="/api/pin/requests")
 

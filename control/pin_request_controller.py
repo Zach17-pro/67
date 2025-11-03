@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 from datetime import datetime
-from entity.request import Request
-from entity.request_repository import RequestRepository
+from entity.pin_request import Request
+from entity.pin_request_repository import RequestRepository
 
 
 class PinRequestController:

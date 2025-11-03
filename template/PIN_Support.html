@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PIN Dashboard | SixSeven</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; padding: 20px; }
+  .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); width: 100%; max-width: 1000px; max-height: 95vh; overflow-y: auto; position: relative; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #f0f2f5; }
+  .header h2 { margin: 0; font-size: 28px; font-weight: 600; color: #1a1a2e; letter-spacing: -0.5px; }
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  .btn { background: #667eea; color: white; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-size: 14px; font-weight: 500; box-shadow: 0 2px 8px rgba(102,126,234,0.2); }
+  .btn:hover { background: #5568d3; }
+  .btn-secondary { background: #8b5cf6; }
+  .btn-secondary:hover { background: #7c3aed; }
+  .btn-danger { background: #ef4444; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-ghost { background: #e5e7eb; color: #111827; }
+  .section { margin: 18px 0 24px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fbfdff; }
+  .section .title { padding: 14px 16px; font-weight: 600; color: #111827; border-bottom: 1px solid #e5e7eb; background: #f3f6ff; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+  .section .content { padding: 16px; }
+  .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-bottom: 12px; }
+  .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-6 { grid-column: span 6; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
+  input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], textarea, select {
+    width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; background: #f9fafb; color: #374151;
+  }
+  textarea { min-height: 80px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; background: white; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+  th { text-align: left; background: #f8fafc; color: #1f2937; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .muted { color: #6b7280; font-size: 12px; }
+  .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill-open { background: #e0e7ff; color: #3730a3; }
+  .pill-progress { background: #fef3c7; color: #92400e; }
+  .pill-completed { background: #dcfce7; color: #166534; }
+  .pill-cancelled { background: #fee2e2; color: #991b1b; }
+  .note { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h2>PIN Dashboard</h2>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="location.href='/logout'">Logout</button>
+    </div>
+  </div>
+
+  <!-- Global PIN identity (for demo, default to 3; override via querystring ?pin_user_id=) -->
+  <div class="section">
+    <div class="title">Session</div>
+    <div class="content row">
+      <div class="col-4">
+        <label>PIN User ID
+          <input id="pinId" type="number" value="3" />
+        </label>
+        <div class="note">Change to the logged-in PIN id if needed.</div>
+      </div>
+      <div class="col-8 actions">
+        <button class="btn" onclick="applyPinId()">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- #23 Create Request -->
+  <div class="section">
+    <div class="title">Create Request</div>
+    <div class="content">
+      <div class="row">
+        <div class="col-6">
+          <label>Title
+            <input id="cr_title" type="text" placeholder="Clinic Transport" />
+          </label>
+        </div>
+        <div class="col-6">
+          <label>Location
+            <input id="cr_location" type="text" placeholder="Bedok" />
+          </label>
+        </div>
+        <div class="col-12">
+          <label>Description
+            <textarea id="cr_desc" placeholder="Describe the assistance needed"></textarea>
+          </label>
+        </div>
+        <div class="col-4">
+          <label>Category ID (optional)
+            <input id="cr_category" type="number" placeholder="e.g. 2" />
+          </label>
+        </div>
+        <div class="col-8 actions">
+          <button class="btn" onclick="createRequest()">Create</button>
+        </div>
+      </div>
+      <div id="cr_msg" class="muted"></div>
+    </div>
+  </div>
+
+  <!-- #24 View My Requests -->
+  <div class="section">
+    <div class="title">My Requests</div>
+    <div class="content">
+      <div class="row">
+        <div class="col-4">
+          <label>Status filter
+            <select id="vr_status">
+              <option value="">All</option>
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Cancelled</option>
+            </select>
+          </label>
+        </div>
+        <div class="col-8 actions">
+          <button class="btn" onclick="loadMyRequests()">Load</button>
+        </div>
+      </div>
+      <div id="vr_table_wrap"></div>
+    </div>
+  </div>
+
+  <!-- #25 Update + #26 Delete (inline from My Requests) -->
+  <div class="section">
+    <div class="title">Edit / Delete Request</div>
+    <div class="content">
+      <div class="row">
+        <div class="col-3">
+          <label>Request ID
+            <input id="ud_id" type="number" placeholder="Select from table above" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Title
+            <input id="ud_title" type="text" placeholder="Leave blank to keep" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Location
+            <input id="ud_location" type="text" placeholder="Leave blank to keep" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Category ID
+            <input id="ud_category" type="number" placeholder="Leave blank to keep" />
+          </label>
+        </div>
+        <div class="col-12">
+          <label>Description
+            <textarea id="ud_desc" placeholder="Leave blank to keep"></textarea>
+          </label>
+        </div>
+        <div class="col-4">
+          <label>Status
+            <select id="ud_status">
+              <option value="">(no change)</option>
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Cancelled</option>
+            </select>
+          </label>
+        </div>
+        <div class="col-8 actions">
+          <button class="btn" onclick="updateRequest()">Save Changes</button>
+          <button class="btn btn-danger" onclick="deleteRequest()">Delete</button>
+        </div>
+      </div>
+      <div id="ud_msg" class="muted"></div>
+    </div>
+  </div>
+
+  <!-- #27 Search My Requests -->
+  <div class="section">
+    <div class="title">Search My Requests</div>
+    <div class="content">
+      <div class="row">
+        <div class="col-3">
+          <label>Keyword
+            <input id="sr_keyword" type="text" placeholder="title or description" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Status
+            <select id="sr_status">
+              <option value="">Any</option>
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Cancelled</option>
+            </select>
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Category ID
+            <input id="sr_category" type="number" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Date From
+            <input id="sr_from" type="date" />
+          </label>
+        </div>
+        <div class="col-3">
+          <label>Date To
+            <input id="sr_to" type="date" />
+          </label>
+        </div>
+        <div class="col-9 actions">
+          <button class="btn" onclick="searchMyRequests()">Search</button>
+        </div>
+      </div>
+      <div id="sr_table_wrap"></div>
+    </div>
+  </div>
+
+  <!-- #28 Search Past Matches + #29 View Past Matches -->
+  <div class="section">
+    <div class="title">Past Matches</div>
+    <div class="content">
+      <div class="grid-2">
+        <div>
+          <h4>View Completed Matches</h4>
+          <div class="row">
+            <div class="col-4">
+              <label>Category ID
+                <input id="vm_category" type="number" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Service From
+                <input id="vm_svc_from" type="date" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Service To
+                <input id="vm_svc_to" type="date" />
+              </label>
+            </div>
+            <div class="col-6">
+              <label>Completed From
+                <input id="vm_cmp_from" type="datetime-local" />
+              </label>
+            </div>
+            <div class="col-6">
+              <label>Completed To
+                <input id="vm_cmp_to" type="datetime-local" />
+              </label>
+            </div>
+            <div class="col-12 actions">
+              <button class="btn" onclick="viewPastMatches()">View</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4>Search Completed Matches</h4>
+          <div class="row">
+            <div class="col-6">
+              <label>Keyword (title/desc)
+                <input id="sm_keyword" type="text" />
+              </label>
+            </div>
+            <div class="col-6">
+              <label>Category ID
+                <input id="sm_category" type="number" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Service From
+                <input id="sm_svc_from" type="date" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Service To
+                <input id="sm_svc_to" type="date" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Completed From
+                <input id="sm_cmp_from" type="datetime-local" />
+              </label>
+            </div>
+            <div class="col-4">
+              <label>Completed To
+                <input id="sm_cmp_to" type="datetime-local" />
+              </label>
+            </div>
+            <div class="col-8 actions">
+              <button class="btn" onclick="searchPastMatches()">Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px;">
+        <div class="col-12" id="pm_table_wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Read pin_user_id from querystring if present
+  (function initPinFromQuery() {
+    const params = new URLSearchParams(location.search);
+    const qPin = params.get('pin_user_id');
+    if (qPin) document.getElementById('pinId').value = qPin;
+  })();
+
+  function applyPinId() {
+    const id = document.getElementById('pinId').value.trim();
+    if (!id) return alert('PIN User ID is required.');
+    // Reload tables with new PIN
+    loadMyRequests();
+    document.getElementById('cr_msg').textContent = '';
+    document.getElementById('ud_msg').textContent = '';
+  }
+
+  // Helpers
+  function pill(status) {
+    const s = (status || '').toLowerCase();
+    if (s === 'open') return '<span class="pill pill-open">Open</span>';
+    if (s === 'in progress') return '<span class="pill pill-progress">In Progress</span>';
+    if (s === 'completed') return '<span class="pill pill-completed">Completed</span>';
+    if (s === 'cancelled') return '<span class="pill pill-cancelled">Cancelled</span>';
+    return status || '';
+  }
+  function getPin() { return document.getElementById('pinId').value.trim(); }
+
+  // #23 Create
+  async function createRequest() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const title = document.getElementById('cr_title').value.trim();
+    const description = document.getElementById('cr_desc').value.trim();
+    const location = document.getElementById('cr_location').value.trim();
+    const categoryRaw = document.getElementById('cr_category').value.trim();
+    const category_id = categoryRaw ? parseInt(categoryRaw, 10) : null;
+
+    const msg = document.getElementById('cr_msg');
+    msg.textContent = '';
+
+    if (!pin_user_id || !title || !description || !location) {
+      msg.textContent = 'All required fields must be filled.';
+      return;
+    }
+    try {
+      const res = await fetch('/api/pin/requests', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin_user_id, title, description, location, category_id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Create failed');
+      msg.textContent = 'Created.';
+      // Clear fields and reload list
+      document.getElementById('cr_title').value = '';
+      document.getElementById('cr_desc').value = '';
+      document.getElementById('cr_location').value = '';
+      document.getElementById('cr_category').value = '';
+      loadMyRequests();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
+  // #24 View Mine
+  async function loadMyRequests() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const status = document.getElementById('vr_status').value;
+
+    const wrap = document.getElementById('vr_table_wrap');
+    wrap.innerHTML = 'Loading...';
+    try {
+      const url = new URL('/api/pin/requests', location.origin);
+      url.searchParams.set('pin_user_id', pin_user_id);
+      if (status) url.searchParams.set('status', status);
+      const res = await fetch(url);
+      const rows = await res.json();
+      wrap.innerHTML = renderRequestsTable(rows);
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error loading requests</div>';
+    }
+  }
+
+  // #25 Update
+  async function updateRequest() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const request_id = parseInt(document.getElementById('ud_id').value, 10);
+    const title = document.getElementById('ud_title').value.trim();
+    const description = document.getElementById('ud_desc').value.trim();
+    const location = document.getElementById('ud_location').value.trim();
+    const categoryRaw = document.getElementById('ud_category').value.trim();
+    const category_id = categoryRaw ? parseInt(categoryRaw, 10) : null;
+    const status = document.getElementById('ud_status').value;
+
+    const msg = document.getElementById('ud_msg');
+    msg.textContent = '';
+
+    if (!pin_user_id || !request_id) {
+      msg.textContent = 'PIN User ID and Request ID are required.';
+      return;
+    }
+    try {
+      const res = await fetch('/api/pin/requests', {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin_user_id, request_id, title: title || undefined, description: description || undefined, location: location || undefined, category_id, status: status || undefined })
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) throw new Error(data.error || data.message || 'Update failed');
+      msg.textContent = 'Updated.';
+      loadMyRequests();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
+  // #26 Delete
+  async function deleteRequest() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const request_id = parseInt(document.getElementById('ud_id').value, 10);
+    const msg = document.getElementById('ud_msg');
+    msg.textContent = '';
+    if (!pin_user_id || !request_id) {
+      msg.textContent = 'PIN User ID and Request ID are required.';
+      return;
+    }
+    if (!confirm('Delete this request?')) return;
+    try {
+      const res = await fetch('/api/pin/requests', {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ pin_user_id, request_id })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Delete failed');
+      msg.textContent = 'Deleted.';
+      loadMyRequests();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
+  // #27 Search My Requests
+  async function searchMyRequests() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const keyword = document.getElementById('sr_keyword').value.trim();
+    const status = document.getElementById('sr_status').value;
+    const catRaw = document.getElementById('sr_category').value.trim();
+    const category_id = catRaw ? parseInt(catRaw, 10) : null;
+    const date_from = document.getElementById('sr_from').value || '';
+    const date_to = document.getElementById('sr_to').value || '';
+
+    const wrap = document.getElementById('sr_table_wrap');
+    wrap.innerHTML = 'Searching...';
+    try {
+      const url = new URL('/api/pin/requests/search', location.origin);
+      url.searchParams.set('pin_user_id', pin_user_id);
+      if (keyword) url.searchParams.set('keyword', keyword);
+      if (status) url.searchParams.set('status', status);
+      if (category_id) url.searchParams.set('category_id', category_id);
+      if (date_from) url.searchParams.set('date_from', date_from);
+      if (date_to) url.searchParams.set('date_to', date_to);
+
+      const res = await fetch(url);
+      const rows = await res.json();
+      wrap.innerHTML = renderRequestsTable(rows);
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error searching requests</div>';
+    }
+  }
+
+  // #28 View Past Matches
+  async function viewPastMatches() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const category_id = parseIntVal('vm_category');
+    const service_date_from = document.getElementById('vm_svc_from').value || '';
+    const service_date_to = document.getElementById('vm_svc_to').value || '';
+    const completion_from = document.getElementById('vm_cmp_from').value || '';
+    const completion_to = document.getElementById('vm_cmp_to').value || '';
+
+    const wrap = document.getElementById('pm_table_wrap');
+    wrap.innerHTML = 'Loading...';
+    try {
+      const url = new URL('/api/pin/matches/past', location.origin);
+      url.searchParams.set('pin_user_id', pin_user_id);
+      if (category_id) url.searchParams.set('category_id', category_id);
+      if (service_date_from) url.searchParams.set('service_date_from', service_date_from);
+      if (service_date_to) url.searchParams.set('service_date_to', service_date_to);
+      if (completion_from) url.searchParams.set('completion_from', completion_from);
+      if (completion_to) url.searchParams.set('completion_to', completion_to);
+
+      const res = await fetch(url);
+      const rows = await res.json();
+      wrap.innerHTML = renderMatchesTable(rows);
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error loading past matches</div>';
+    }
+  }
+
+  // #29 Search Past Matches
+  async function searchPastMatches() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const keyword = document.getElementById('sm_keyword').value.trim();
+    const category_id = parseIntVal('sm_category');
+    const service_date_from = document.getElementById('sm_svc_from').value || '';
+    const service_date_to = document.getElementById('sm_svc_to').value || '';
+    const completion_from = document.getElementById('sm_cmp_from').value || '';
+    const completion_to = document.getElementById('sm_cmp_to').value || '';
+
+    const wrap = document.getElementById('pm_table_wrap');
+    wrap.innerHTML = 'Searching...';
+    try {
+      const url = new URL('/api/pin/matches/search', location.origin);
+      url.searchParams.set('pin_user_id', pin_user_id);
+      if (keyword) url.searchParams.set('keyword', keyword);
+      if (category_id) url.searchParams.set('category_id', category_id);
+      if (service_date_from) url.searchParams.set('service_date_from', service_date_from);
+      if (service_date_to) url.searchParams.set('service_date_to', service_date_to);
+      if (completion_from) url.searchParams.set('completion_from', completion_from);
+      if (completion_to) url.searchParams.set('completion_to', completion_to);
+
+      const res = await fetch(url);
+      const rows = await res.json();
+      wrap.innerHTML = renderMatchesTable(rows);
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error searching past matches</div>';
+    }
+  }
+
+  // Renderers
+  function renderRequestsTable(rows) {
+    if (!rows || rows.length === 0) return '<div class="muted">No requests found.</div>';
+    const tr = rows.map(r => `
+      <tr>
+        <td>${r.request_id}</td>
+        <td>${escapeHtml(r.title)}</td>
+        <td>${pill(r.status)}</td>
+        <td>${escapeHtml(r.location || '')}</td>
+        <td class="muted">${r.created_at || ''}</td>
+        <td class="actions">
+          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id ?? ''})">Select</button>
+        </td>
+      </tr>
+    `).join('');
+    return `
+      <table>
+        <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Location</th><th>Created</th><th></th></tr></thead>
+        <tbody>${tr}</tbody>
+      </table>`;
+  }
+
+  function renderMatchesTable(rows) {
+    if (!rows || rows.length === 0) return '<div class="muted">No completed matches.</div>';
+    const tr = rows.map(m => `
+      <tr>
+        <td>${m.match_id}</td>
+        <td>${escapeHtml(m.request_title || '')}</td>
+        <td>${m.service_date || ''}</td>
+        <td>${m.completion_date || ''}</td>
+        <td>${escapeHtml(m.status || '')}</td>
+        <td>${escapeHtml(m.category_name || (m.category_id ?? ''))}</td>
+        <td>${escapeHtml(m.location || '')}</td>
+      </tr>
+    `).join('');
+    return `
+      <table>
+        <thead>
+          <tr><th>Match ID</th><th>Request</th><th>Service Date</th><th>Completed</th><th>Status</th><th>Category</th><th>Location</th></tr>
+        </thead>
+        <tbody>${tr}</tbody>
+      </table>`;
+  }
+
+  function preselect(id, title, location, category_id) {
+    document.getElementById('ud_id').value = id;
+    document.getElementById('ud_title').value = title || '';
+    document.getElementById('ud_location').value = location || '';
+    document.getElementById('ud_category').value = category_id || '';
+    document.getElementById('ud_desc').value = '';
+    document.getElementById('ud_status').value = '';
+    document.getElementById('ud_msg').textContent = 'Loaded request ' + id + ' into editor below.';
+  }
+
+  function parseIntVal(id) {
+    const v = document.getElementById(id).value.trim();
+    return v ? parseInt(v, 10) : null;
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function escapeAttr(s) {
+    if (s == null) return '';
+    return String(s).replace(/'/g, "\\'");
+  }
+
+  // Initial load
+  document.addEventListener('DOMContentLoaded', () => {
+    loadMyRequests();
+  });
+</script>
+</body>
+</html>

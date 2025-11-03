@@ -6,7 +6,7 @@ from dataclasses import asdict
 from typing import Any, Dict, List
 
 from entity.match_repository import MatchRepository
-from app.controllers.match_controller import MatchController
+from control.match_controller import MatchController
 
 match_api = Blueprint("match_api", __name__, url_prefix="/api/pin/matches")
 
