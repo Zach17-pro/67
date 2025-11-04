@@ -5,18 +5,21 @@ from typing import List, Optional
 from datetime import datetime
 from entity.pin_request import Request
 from entity.pin_request_repository import RequestRepository
+from entity.match_repository import MatchRepository
 
 
 class PinRequestController:
     """
     Controller for PIN request flows (#23–#27).
     Performs lightweight validation and delegates to RequestRepository.
+    Also ensures a row exists in `match` when a request becomes Completed.
     """
 
     ALLOWED_STATUSES = {"Open", "In Progress", "Completed", "Cancelled"}
 
-    def __init__(self, request_repo: RequestRepository):
+    def __init__(self, request_repo: RequestRepository, match_repo: Optional[MatchRepository] = None):
         self.request_repo = request_repo
+        self.match_repo = match_repo
 
     # -------- #23: Create a request --------
     def create_request(
@@ -79,7 +82,7 @@ class PinRequestController:
         if status is not None:
             self._require_status(status)
 
-        return self.request_repo.update_request(
+        updated = self.request_repo.update_request(
             request_id=request_id,
             pin_user_id=pin_user_id,
             title=title.strip() if isinstance(title, str) else title,
@@ -88,6 +91,22 @@ class PinRequestController:
             location=location.strip() if isinstance(location, str) else location,
             status=status,
         )
+
+        # If the request was (or is now) Completed, ensure a Completed match row exists.
+        # NOTE: We use pin_user_id as a placeholder csr_user_id if none is known.
+        #       Replace with the actual CSR id when you have it in your flow.
+        if updated and status == "Completed" and self.match_repo is not None:
+            try:
+                self.match_repo.ensure_completed_match(
+                    request_id=request_id,
+                    pin_user_id=pin_user_id,
+                    csr_user_id=pin_user_id,  # TODO: provide real CSR user id when available
+                )
+            except Exception:
+                # Don't block the request update if match creation fails; surface via logs if desired.
+                pass
+
+        return updated
 
     # -------- #26: Delete my request --------
     def delete_request(self, *, pin_user_id: int, request_id: int) -> bool:

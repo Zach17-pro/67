@@ -6,26 +6,30 @@ from dataclasses import asdict
 from typing import Any, Dict, List
 
 from entity.pin_request_repository import RequestRepository
-from entity.match_repository import MatchRepository  # optional if you later add endpoints here
+from entity.match_repository import MatchRepository
 from control.pin_request_controller import PinRequestController
 
 pin_req_api = Blueprint("pin_request_api", __name__, url_prefix="/api/pin/requests")
 
+
 def controller() -> PinRequestController:
     db = current_app.config["DB"]
     req_repo = RequestRepository(db)
-    return PinRequestController(req_repo)
+    match_repo = MatchRepository(db)  # <-- wire in for Completed -> match creation
+    return PinRequestController(req_repo, match_repo)
+
 
 # ---------- helpers ----------
 def _req_to_dict(r) -> Dict[str, Any]:
-    # Works for a dataclass; falls back to __dict__
     try:
-        return asdict(r)  # type: ignore[arg-type]
+        return asdict(r)  # dataclass
     except Exception:
-        return r.__dict__
+        return r.__dict__  # fallback
+
 
 def _list_to_dicts(items) -> List[Dict[str, Any]]:
     return [_req_to_dict(i) for i in items]
+
 
 # ---------- Endpoints ----------
 
@@ -41,6 +45,7 @@ def list_my_requests():
         return jsonify(_list_to_dicts(items))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # POST /api/pin/requests
 # body: { "pin_user_id": 3, "title": "...", "description": "...", "location": "...", "category_id": 2 }
@@ -63,6 +68,7 @@ def create_request():
         return jsonify(_req_to_dict(req)), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # PUT /api/pin/requests
 # body: { "pin_user_id": 3, "request_id": 10, "title": "...", "status": "Open", ... }
@@ -88,6 +94,7 @@ def update_request():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # DELETE /api/pin/requests
 # body: { "pin_user_id": 3, "request_id": 10 }
 @pin_req_api.delete("")
@@ -104,6 +111,7 @@ def delete_request():
         return jsonify({"success": bool(ok)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # GET /api/pin/requests/search?pin_user_id=3&keyword=...&status=...&category_id=2&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
 @pin_req_api.get("/search")

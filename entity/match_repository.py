@@ -3,9 +3,10 @@ from typing import List, Optional, Any, Dict
 from datetime import date, datetime
 from entity.match import Match
 
+
 class MatchRepository:
     """
-    Repository for PIN past matches and related queries.
+    Repository for PIN matches and related queries.
     Joins `match` -> `request` -> `service_category` to support service/date filters.
     """
 
@@ -28,6 +29,121 @@ class MatchRepository:
             category_name=row.get("category_name"),
             location=row.get("location"),
         )
+
+    # ---------- basic CRUD-ish helpers for flows ----------
+    def create_match(
+        self,
+        *,
+        request_id: int,
+        csr_user_id: int,
+        pin_user_id: int,
+        service_date: Optional[date] = None,
+        status: str = "Scheduled",
+    ) -> int:
+        """
+        Create a match row. If service_date is None, defaults to CURDATE().
+        Returns new match_id.
+        """
+        cur = self.db.cursor()
+        if service_date is None:
+            cur.execute(
+                """
+                INSERT INTO `match`
+                    (request_id, csr_user_id, pin_user_id, service_date, status)
+                VALUES
+                    (%s, %s, %s, CURDATE(), %s)
+                """,
+                (request_id, csr_user_id, pin_user_id, status),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO `match`
+                    (request_id, csr_user_id, pin_user_id, service_date, status)
+                VALUES
+                    (%s, %s, %s, %s, %s)
+                """,
+                (request_id, csr_user_id, pin_user_id, service_date, status),
+            )
+        self.db.commit()
+        new_id = cur.lastrowid
+        cur.close()
+        return new_id
+
+    def complete_match(self, match_id: int) -> None:
+        """
+        Mark a match row as Completed and stamp completion_date=NOW().
+        """
+        cur = self.db.cursor()
+        cur.execute(
+            """
+            UPDATE `match`
+               SET status = 'Completed',
+                   completion_date = NOW()
+             WHERE match_id = %s
+            """,
+            (match_id,),
+        )
+        self.db.commit()
+        cur.close()
+
+    def ensure_completed_match(
+        self,
+        *,
+        request_id: int,
+        pin_user_id: int,
+        csr_user_id: int,
+        service_date: Optional[date] = None,
+    ) -> int:
+        """
+        Idempotently ensure there is a Completed match for a request.
+        - If a Completed match already exists for the request, returns its id.
+        - Otherwise inserts a new row with status='Completed' and completion_date=NOW().
+        Returns the match_id.
+        """
+        cur = self.db.cursor()
+        # Is there an existing Completed match for this request?
+        cur.execute(
+            """
+            SELECT match_id
+              FROM `match`
+             WHERE request_id = %s
+               AND status = 'Completed'
+             LIMIT 1
+            """,
+            (request_id,),
+        )
+        row = cur.fetchone()
+        if row:
+            match_id = row[0]
+            cur.close()
+            return match_id
+
+        # Insert a new completed match
+        if service_date is None:
+            cur.execute(
+                """
+                INSERT INTO `match`
+                    (request_id, csr_user_id, pin_user_id, service_date, completion_date, status)
+                VALUES
+                    (%s, %s, %s, CURDATE(), NOW(), 'Completed')
+                """,
+                (request_id, csr_user_id, pin_user_id),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO `match`
+                    (request_id, csr_user_id, pin_user_id, service_date, completion_date, status)
+                VALUES
+                    (%s, %s, %s, %s, NOW(), 'Completed')
+                """,
+                (request_id, csr_user_id, pin_user_id, service_date),
+            )
+        self.db.commit()
+        new_id = cur.lastrowid
+        cur.close()
+        return new_id
 
     # ---------- fetch one ----------
     def get_by_id(self, match_id: int, pin_user_id: Optional[int] = None) -> Optional[Match]:

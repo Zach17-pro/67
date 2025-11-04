@@ -53,7 +53,7 @@
     </div>
   </div>
 
-  <!-- Global PIN identity (for demo, default to 3; override via querystring ?pin_user_id=) -->
+  <!-- Session -->
   <div class="section">
     <div class="title">Session</div>
     <div class="content row">
@@ -90,8 +90,8 @@
           </label>
         </div>
         <div class="col-4">
-          <label>Category ID (optional)
-            <input id="cr_category" type="number" placeholder="e.g. 2" />
+          <label>Service Category (optional)
+            <select id="cr_category"></select>
           </label>
         </div>
         <div class="col-8 actions">
@@ -126,7 +126,7 @@
     </div>
   </div>
 
-  <!-- #25 Update + #26 Delete (inline from My Requests) -->
+  <!-- #25 Update + #26 Delete -->
   <div class="section">
     <div class="title">Edit / Delete Request</div>
     <div class="content">
@@ -147,8 +147,8 @@
           </label>
         </div>
         <div class="col-3">
-          <label>Category ID
-            <input id="ud_category" type="number" placeholder="Leave blank to keep" />
+          <label>Service Category
+            <select id="ud_category"></select>
           </label>
         </div>
         <div class="col-12">
@@ -176,7 +176,7 @@
     </div>
   </div>
 
-  <!-- #27 Search My Requests -->
+  <!-- #27 Search My Requests (category now dropdown) -->
   <div class="section">
     <div class="title">Search My Requests</div>
     <div class="content">
@@ -198,8 +198,8 @@
           </label>
         </div>
         <div class="col-3">
-          <label>Category ID
-            <input id="sr_category" type="number" />
+          <label>Category
+            <select id="sr_category"></select>
           </label>
         </div>
         <div class="col-3">
@@ -220,7 +220,7 @@
     </div>
   </div>
 
-  <!-- #28 Search Past Matches + #29 View Past Matches -->
+  <!-- #28 / #29 Past Matches -->
   <div class="section">
     <div class="title">Past Matches</div>
     <div class="content">
@@ -229,8 +229,8 @@
           <h4>View Completed Matches</h4>
           <div class="row">
             <div class="col-4">
-              <label>Category ID
-                <input id="vm_category" type="number" />
+              <label>Category
+                <select id="vm_category"></select>
               </label>
             </div>
             <div class="col-4">
@@ -267,8 +267,8 @@
               </label>
             </div>
             <div class="col-6">
-              <label>Category ID
-                <input id="sm_category" type="number" />
+              <label>Category
+                <select id="sm_category"></select>
               </label>
             </div>
             <div class="col-4">
@@ -306,23 +306,7 @@
 </div>
 
 <script>
-  // Read pin_user_id from querystring if present
-  (function initPinFromQuery() {
-    const params = new URLSearchParams(location.search);
-    const qPin = params.get('pin_user_id');
-    if (qPin) document.getElementById('pinId').value = qPin;
-  })();
-
-  function applyPinId() {
-    const id = document.getElementById('pinId').value.trim();
-    if (!id) return alert('PIN User ID is required.');
-    // Reload tables with new PIN
-    loadMyRequests();
-    document.getElementById('cr_msg').textContent = '';
-    document.getElementById('ud_msg').textContent = '';
-  }
-
-  // Helpers
+  // ===== Helpers =====
   function pill(status) {
     const s = (status || '').toLowerCase();
     if (s === 'open') return '<span class="pill pill-open">Open</span>';
@@ -332,15 +316,96 @@
     return status || '';
   }
   function getPin() { return document.getElementById('pinId').value.trim(); }
+  function parseIntVal(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const v = (el.value || '').trim();
+    return v ? parseInt(v, 10) : null;
+  }
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function escapeAttr(s) {
+    if (s == null) return '';
+    return String(s).replace(/'/g, "\\'");
+  }
 
-  // #23 Create
+  // ===== Categories: load once, populate all selects =====
+  async function loadCategories() {
+    const fallbacks = {
+      cr_category: '(None)',
+      ud_category: '(no change)',
+      vm_category: '(Any)',
+      sm_category: '(Any)',
+      sr_category: '(Any)'
+    };
+    const ids = Object.keys(fallbacks);
+
+    function putFallbacks() {
+      ids.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = fallbacks[id];
+        sel.appendChild(opt);
+        sel.disabled = false;
+      });
+    }
+
+    try {
+      const res = await fetch('/api/platform_manager');
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const cats = await res.json(); // [{id, name}, ...]
+      ids.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        const first = document.createElement('option');
+        first.value = '';
+        first.textContent = fallbacks[id];
+        sel.appendChild(first);
+        if (Array.isArray(cats)) {
+          cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = String(c.id);
+            opt.textContent = c.name;
+            sel.appendChild(opt);
+          });
+        }
+        sel.disabled = false;
+      });
+    } catch (err) {
+      console.error('Categories load error:', err);
+      putFallbacks();
+    }
+  }
+
+  // ===== Session controls =====
+  (function initPinFromQuery() {
+    const params = new URLSearchParams(location.search);
+    const qPin = params.get('pin_user_id');
+    if (qPin) document.getElementById('pinId').value = qPin;
+  })();
+
+  function applyPinId() {
+    const id = document.getElementById('pinId').value.trim();
+    if (!id) return alert('PIN User ID is required.');
+    loadMyRequests();
+    document.getElementById('cr_msg').textContent = '';
+    document.getElementById('ud_msg').textContent = '';
+  }
+
+  // ===== CRUD: Requests =====
   async function createRequest() {
     const pin_user_id = parseInt(getPin(), 10);
     const title = document.getElementById('cr_title').value.trim();
     const description = document.getElementById('cr_desc').value.trim();
     const location = document.getElementById('cr_location').value.trim();
-    const categoryRaw = document.getElementById('cr_category').value.trim();
-    const category_id = categoryRaw ? parseInt(categoryRaw, 10) : null;
+    const catVal = (document.getElementById('cr_category').value || '').trim();
+    const category_id = catVal ? parseInt(catVal, 10) : null;
 
     const msg = document.getElementById('cr_msg');
     msg.textContent = '';
@@ -358,7 +423,6 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Create failed');
       msg.textContent = 'Created.';
-      // Clear fields and reload list
       document.getElementById('cr_title').value = '';
       document.getElementById('cr_desc').value = '';
       document.getElementById('cr_location').value = '';
@@ -369,7 +433,6 @@
     }
   }
 
-  // #24 View Mine
   async function loadMyRequests() {
     const pin_user_id = parseInt(getPin(), 10);
     const status = document.getElementById('vr_status').value;
@@ -388,15 +451,14 @@
     }
   }
 
-  // #25 Update
   async function updateRequest() {
     const pin_user_id = parseInt(getPin(), 10);
     const request_id = parseInt(document.getElementById('ud_id').value, 10);
     const title = document.getElementById('ud_title').value.trim();
     const description = document.getElementById('ud_desc').value.trim();
     const location = document.getElementById('ud_location').value.trim();
-    const categoryRaw = document.getElementById('ud_category').value.trim();
-    const category_id = categoryRaw ? parseInt(categoryRaw, 10) : null;
+    const catVal = (document.getElementById('ud_category').value || '').trim();
+    const category_id = catVal ? parseInt(catVal, 10) : null;
     const status = document.getElementById('ud_status').value;
 
     const msg = document.getElementById('ud_msg');
@@ -410,7 +472,15 @@
       const res = await fetch('/api/pin/requests', {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ pin_user_id, request_id, title: title || undefined, description: description || undefined, location: location || undefined, category_id, status: status || undefined })
+        body: JSON.stringify({
+          pin_user_id,
+          request_id,
+          title: title || undefined,
+          description: description || undefined,
+          location: location || undefined,
+          category_id: catVal === '' ? undefined : category_id,
+          status: status || undefined
+        })
       });
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.error || data.message || 'Update failed');
@@ -421,7 +491,6 @@
     }
   }
 
-  // #26 Delete
   async function deleteRequest() {
     const pin_user_id = parseInt(getPin(), 10);
     const request_id = parseInt(document.getElementById('ud_id').value, 10);
@@ -447,13 +516,12 @@
     }
   }
 
-  // #27 Search My Requests
   async function searchMyRequests() {
     const pin_user_id = parseInt(getPin(), 10);
     const keyword = document.getElementById('sr_keyword').value.trim();
     const status = document.getElementById('sr_status').value;
-    const catRaw = document.getElementById('sr_category').value.trim();
-    const category_id = catRaw ? parseInt(catRaw, 10) : null;
+    const catVal = (document.getElementById('sr_category').value || '').trim();
+    const category_id = catVal ? parseInt(catVal, 10) : null;
     const date_from = document.getElementById('sr_from').value || '';
     const date_to = document.getElementById('sr_to').value || '';
 
@@ -476,7 +544,7 @@
     }
   }
 
-  // #28 View Past Matches
+  // ===== Past Matches =====
   async function viewPastMatches() {
     const pin_user_id = parseInt(getPin(), 10);
     const category_id = parseIntVal('vm_category');
@@ -504,7 +572,6 @@
     }
   }
 
-  // #29 Search Past Matches
   async function searchPastMatches() {
     const pin_user_id = parseInt(getPin(), 10);
     const keyword = document.getElementById('sm_keyword').value.trim();
@@ -534,7 +601,7 @@
     }
   }
 
-  // Renderers
+  // ===== Renderers =====
   function renderRequestsTable(rows) {
     if (!rows || rows.length === 0) return '<div class="muted">No requests found.</div>';
     const tr = rows.map(r => `
@@ -545,7 +612,7 @@
         <td>${escapeHtml(r.location || '')}</td>
         <td class="muted">${r.created_at || ''}</td>
         <td class="actions">
-          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id ?? ''})">Select</button>
+          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id != null ? r.category_id : 'null'})">Select</button>
         </td>
       </tr>
     `).join('');
@@ -582,28 +649,16 @@
     document.getElementById('ud_id').value = id;
     document.getElementById('ud_title').value = title || '';
     document.getElementById('ud_location').value = location || '';
-    document.getElementById('ud_category').value = category_id || '';
+    const sel = document.getElementById('ud_category');
+    if (sel) sel.value = (category_id == null ? '' : String(category_id));
     document.getElementById('ud_desc').value = '';
     document.getElementById('ud_status').value = '';
     document.getElementById('ud_msg').textContent = 'Loaded request ' + id + ' into editor below.';
   }
 
-  function parseIntVal(id) {
-    const v = document.getElementById(id).value.trim();
-    return v ? parseInt(v, 10) : null;
-  }
-
-  function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-  }
-  function escapeAttr(s) {
-    if (s == null) return '';
-    return String(s).replace(/'/g, "\\'");
-  }
-
-  // Initial load
-  document.addEventListener('DOMContentLoaded', () => {
+  // ===== Init =====
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadCategories();
     loadMyRequests();
   });
 </script>
