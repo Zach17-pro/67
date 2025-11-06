@@ -109,6 +109,8 @@ def delete_request():
             request_id=int(data["request_id"]),
         )
         return jsonify({"success": bool(ok)})
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 409   # conflict – in use
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

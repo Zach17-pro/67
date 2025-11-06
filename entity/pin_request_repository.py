@@ -193,35 +193,59 @@ class RequestRepository:
     # ---------- #26: Delete my request ----------
     def delete_request(self, request_id: int, pin_user_id: int) -> Optional[Request]:
         """
-        Deletes a request owned by the PIN.
+        Deletes a request owned by the PIN *only if* there are no dependent matches.
         Returns a minimal Request with request_id if deleted, else None.
+        Raises ValueError when blocked by dependencies.
         """
+        # local import to avoid changing module imports
+        from mysql.connector import errors as db_errors
+
+        # Verify ownership / existence first
         existing = self.get_request_by_id(request_id, pin_user_id)
         if not existing:
             return None
 
         cur = self.db.cursor()
-        cur.execute(
-            "DELETE FROM request WHERE request_id = %s AND pin_user_id = %s",
-            (request_id, pin_user_id),
-        )
-        self.db.commit()
-        cur.close()
+        try:
+            # Guard: refuse delete if there are matches referencing this request
+            cur.execute("SELECT COUNT(*) FROM `match` WHERE request_id = %s", (request_id,))
+            cnt_row = cur.fetchone()
+            # plain cursor returns a tuple like (count,)
+            dep_count = (cnt_row[0] if cnt_row else 0)
+            if dep_count and dep_count > 0:
+                raise ValueError(f"Cannot delete: request has {dep_count} match(es). Cancel it instead.")
 
-        # mirror your category delete return style
-        return Request(
-            request_id=request_id,
-            pin_user_id=pin_user_id,
-            title=existing.title,
-            description=existing.description,
-            status=existing.status,
-            created_at=existing.created_at,
-            updated_at=existing.updated_at,
-            view_count=existing.view_count,
-            shortlist_count=existing.shortlist_count,
-            category_id=existing.category_id,
-            location=existing.location,
-        )
+            # Proceed with deletion
+            cur.execute(
+                "DELETE FROM request WHERE request_id = %s AND pin_user_id = %s",
+                (request_id, pin_user_id),
+            )
+            self.db.commit()
+
+            if cur.rowcount == 0:
+                # nothing deleted (race condition or ownership mismatch)
+                return None
+
+            # Return a copy of the deleted item's key fields (your existing pattern)
+            return Request(
+                request_id=request_id,
+                pin_user_id=pin_user_id,
+                title=existing.title,
+                description=existing.description,
+                status=existing.status,
+                created_at=existing.created_at,
+                updated_at=existing.updated_at,
+                view_count=existing.view_count,
+                shortlist_count=existing.shortlist_count,
+                category_id=existing.category_id,
+                location=existing.location,
+            )
+        except db_errors.IntegrityError as e:
+            # any other FK blocks
+            self.db.rollback()
+            raise ValueError("Request cannot be deleted because it is referenced by other records.") from e
+        finally:
+            cur.close()
 
     # ---------- #27: Search my requests ----------
     def search_requests(
