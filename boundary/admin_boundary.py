@@ -14,15 +14,25 @@
 #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
 
 from flask import Blueprint, jsonify, request, current_app
-from control.user_controller import UserController
+from control.user_controller import (
+    UserAdminCreateUserAccountController,
+    UserAdminVieweUserAccountController,
+    UserAdminEditUserAccountController,
+    UserAdminDeleteUserAccountController,
+    UserAdminSearchUserAccountController,
+    UserAdminCreateUserProfileController,
+    UserAdminViewUserProfileController,
+    UpdateUserProfileController,
+    DeleteUserProfileController,
+    SearchUserProfileController
+)
 from entity.user_repository import UserRepository
 
 admin_api = Blueprint("admin_api", __name__, url_prefix="/api/admin")
 
-def controller() -> UserController:
+def repo() -> UserRepository:
     db = current_app.config["DB"]
-    repo = UserRepository(db)
-    return UserController(repo)
+    return UserRepository(db)
 
 ###########################
 ###### USER ACCOUNTS ######
@@ -42,7 +52,8 @@ def create_user():
         if not username or not password or not role or not full_name:
             return jsonify({"error": "All fields are required"}), 400
 
-        new_user = controller().create_user(username, password, role, full_name)
+        controller = UserAdminCreateUserAccountController(repo())
+        new_user = controller.create_user(username, password, role, full_name)
         return jsonify({"success": True, "user": new_user.to_dict()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -52,7 +63,8 @@ def create_user():
 @admin_api.get("/users")
 def get_users():
     try:
-        users = controller().list_users()
+        controller = UserAdminVieweUserAccountController(repo())
+        users = controller.list_users()
         return jsonify([u.to_dict() for u in users])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -71,7 +83,8 @@ def update_user():
         if not user_id or not username or not role:
             return jsonify({"error": "User ID, username, and role are required"}), 400
 
-        controller().update_user(user_id, username, role, password)
+        controller = UserAdminEditUserAccountController(repo())
+        controller.update_user(user_id, username, role, password)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -87,7 +100,8 @@ def delete_user():
         if not user_id:
             return jsonify({"error": "User ID is required"}), 400
 
-        controller().delete_user(user_id)
+        controller = UserAdminDeleteUserAccountController(repo())
+        controller.delete_user(user_id)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -98,7 +112,8 @@ def delete_user():
 def search_user():
     try:
         keyword = request.args.get("q", "").strip()
-        users = controller().search_users(keyword)
+        controller = UserAdminSearchUserAccountController(repo())
+        users = controller.search_users(keyword)
         return jsonify([u.to_dict() for u in users])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -111,7 +126,6 @@ def search_user():
 #7 As a user admin, I want to create user profiles so that users’ details are recorded.
 @admin_api.post("/profiles")
 def create_profile():
-    """Create a new user profile"""
     try:
         data = request.get_json(force=True) or {}
         username = data.get("username")
@@ -121,7 +135,8 @@ def create_profile():
         if not username or not full_name:
             return jsonify({"error": "Username and full name are required"}), 400
 
-        new_profile = controller().create_profile(username, full_name, email)
+        controller = UserAdminCreateUserProfileController(repo())
+        new_profile = controller.create_profile(username, full_name, email)
         return jsonify({"success": True, "profile": new_profile.to_dict()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -129,9 +144,9 @@ def create_profile():
 #8 As a user admin, I want to view user profiles so that I can check stored information.
 @admin_api.get("/profiles")
 def get_profiles():
-    """View all user profiles"""
     try:
-        profiles = controller().list_profiles()
+        controller = UserAdminViewUserProfileController(repo())
+        profiles = controller.list_profiles()
         return jsonify([p.to_dict() for p in profiles])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -139,7 +154,6 @@ def get_profiles():
 #9 As a user admin, I want to update user profiles so that details remain current.
 @admin_api.put("/profiles")
 def update_profile():
-    """Update existing user profile"""
     try:
         data = request.get_json(force=True) or {}
         user_id = data.get("id")
@@ -149,7 +163,8 @@ def update_profile():
         if not user_id or not full_name:
             return jsonify({"error": "User ID and full name are required"}), 400
 
-        controller().update_profile(user_id, full_name, email)
+        controller = UpdateUserProfileController(repo())
+        controller.update_profile(user_id, full_name, email)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -157,7 +172,6 @@ def update_profile():
 #10 As a user admin, I want to delete user profiles so that invalid records are removed.
 @admin_api.delete("/profiles")
 def delete_profile():
-    """Delete a user profile"""
     try:
         data = request.get_json(force=True) or {}
         user_id = data.get("id")
@@ -165,7 +179,8 @@ def delete_profile():
         if not user_id:
             return jsonify({"error": "User ID is required"}), 400
 
-        result = controller().delete_profile(user_id)
+        controller = DeleteUserProfileController(repo())
+        result = controller.delete_profile(user_id)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -173,10 +188,10 @@ def delete_profile():
 #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
 @admin_api.get("/profiles/search")
 def search_profiles():
-    """Search user profiles"""
     try:
         keyword = request.args.get("q", "").strip()
-        profiles = controller().search_profiles(keyword)
+        controller = SearchUserProfileController(repo())
+        profiles = controller.search_profiles(keyword)
         return jsonify([p.to_dict() for p in profiles])
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -109,8 +109,8 @@ class UserRepository:
     def create_profile(self, username: str, full_name: str, email: str):
         cur = self.db.cursor()
         cur.execute(
-            "INSERT INTO user (username, full_name, email) VALUES (%s, %s, %s)",
-            (username, full_name, email),
+            "INSERT INTO user (username, full_name, email, password, role) VALUES (%s, %s, %s)",
+            (username, full_name, email, 'default123','user'),
         )
         self.db.commit()
         new_id = cur.lastrowid
