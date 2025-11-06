@@ -1,7 +1,7 @@
 # app/entity/match_repository.py
 from __future__ import annotations
 
-from typing import List, Optional, Any, Dict, Tuple
+from typing import List, Optional, Any, Dict
 from datetime import date, datetime
 from entity.match import Match
 
@@ -74,7 +74,8 @@ class MatchRepository:
         order_desc: bool = True,
     ) -> List[Match]:
         """
-        View past matches (defaults to status='Completed') with optional filters.
+        View past matches (defaults to completed) with optional filters.
+        Uses a tolerant status check to handle casing/whitespace changes.
         """
         sql = """
             SELECT
@@ -86,7 +87,8 @@ class MatchRepository:
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
             WHERE m.pin_user_id = %s
-              AND m.status = 'Completed'
+              AND TRIM(LOWER(m.status)) IN ('completed','complete')
+              -- AND m.completion_date IS NOT NULL   -- uncomment if you require a timestamp
         """
         params: List[Any] = [pin_user_id]
 
@@ -146,7 +148,8 @@ class MatchRepository:
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
             WHERE m.pin_user_id = %s
-              AND m.status = 'Completed'
+              AND TRIM(LOWER(m.status)) IN ('completed','complete')
+              -- AND m.completion_date IS NOT NULL   -- optional
         """
         params: List[Any] = [pin_user_id]
 

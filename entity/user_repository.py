@@ -133,7 +133,6 @@ class UserRepository:
 
     def create_profile(self, username: str, full_name: str, email: str) -> UserProfile:
         cur = self.db.cursor()
-<<<<<<< HEAD
         try:
             cur.execute(
                 "INSERT INTO user (username, full_name, email) VALUES (%s, %s, %s)",
@@ -143,15 +142,6 @@ class UserRepository:
             new_id = cur.lastrowid
         finally:
             cur.close()
-=======
-        cur.execute(
-            "INSERT INTO user (username, full_name, email, password, role) VALUES (%s, %s, %s)",
-            (username, full_name, email, 'default123','user'),
-        )
-        self.db.commit()
-        new_id = cur.lastrowid
-        cur.close()
->>>>>>> 6de5a2dc97b871fb10c2103c7a3098ab403ef237
 
         return UserProfile(id=new_id, username=username, full_name=full_name, email=email)
 
