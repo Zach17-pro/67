@@ -165,9 +165,12 @@
               <option>Cancelled</option>
             </select>
           </label>
+          <!-- holds the current DB status of the selected row -->
+          <input type="hidden" id="ud_current_status" value="">
         </div>
         <div class="col-8 actions">
           <button class="btn" onclick="updateRequest()">Save Changes</button>
+          <button class="btn btn-secondary" id="undoBtn" style="display:none" onclick="undoCompleted()">Undo Completed</button>
           <button class="btn btn-danger" onclick="deleteRequest()">Delete</button>
         </div>
       </div>
@@ -480,7 +483,12 @@
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.error || data.message || 'Update failed');
       msg.textContent = 'Updated.';
+      if (status) {
+        // reflect the new saved status in the hidden field
+        document.getElementById('ud_current_status').value = status;
+      }
       loadMyRequests();
+      showUndoButtonIfNeeded();
     } catch (e) {
       msg.textContent = e.message;
     }
@@ -506,6 +514,7 @@
       if (!res.ok || !data.success) throw new Error(data.error || 'Delete failed');
       msg.textContent = 'Deleted.';
       loadMyRequests();
+      showUndoButtonIfNeeded();
     } catch (e) {
       msg.textContent = e.message;
     }
@@ -596,6 +605,43 @@
     }
   }
 
+  // ===== Undo Completed helpers =====
+  function showUndoButtonIfNeeded() {
+    const btn = document.getElementById('undoBtn');
+    const id = (document.getElementById('ud_id').value || '').trim();
+    const current = (document.getElementById('ud_current_status').value || '').trim();
+    const selected = document.getElementById('ud_status').value || '';
+    const isCompleted = (current === 'Completed') || (selected === 'Completed');
+    btn.style.display = (id && isCompleted) ? 'inline-block' : 'none';
+  }
+
+  async function undoCompleted() {
+    const pin_user_id = parseInt(getPin(), 10);
+    const request_id = parseInt(document.getElementById('ud_id').value, 10);
+    const msg = document.getElementById('ud_msg');
+    if (!pin_user_id || !request_id) {
+      msg.textContent = 'PIN User ID and Request ID are required.';
+      return;
+    }
+    try {
+      const res = await fetch('/api/pin/matches/undo-complete', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ request_id, pin_user_id, new_status: 'Open' })
+      });
+      const data = await res.json();
+      if (!res.ok || data.success !== true) throw new Error(data.error || data.message || 'Undo failed');
+      msg.textContent = `Reopened request; removed ${data.matches_deleted} match(es).`;
+      // reflect state
+      document.getElementById('ud_current_status').value = 'Open';
+      document.getElementById('ud_status').value = '';
+      loadMyRequests();
+      showUndoButtonIfNeeded();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
   // ===== Renderers =====
   function renderRequestsTable(rows) {
     if (!rows || rows.length === 0) return '<div class="muted">No requests found.</div>';
@@ -607,7 +653,7 @@
         <td>${escapeHtml(r.location || '')}</td>
         <td class="muted">${r.created_at || ''}</td>
         <td class="actions">
-          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id != null ? r.category_id : 'null'})">Select</button>
+          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id != null ? r.category_id : 'null'}, '${escapeAttr(r.status)}')">Select</button>
         </td>
       </tr>
     `).join('');
@@ -640,21 +686,28 @@
       </table>`;
   }
 
-  function preselect(id, title, location, category_id) {
+  function preselect(id, title, location, category_id, status) {
     document.getElementById('ud_id').value = id;
     document.getElementById('ud_title').value = title || '';
     document.getElementById('ud_location').value = location || '';
     const sel = document.getElementById('ud_category');
     if (sel) sel.value = (category_id == null ? '' : String(category_id));
     document.getElementById('ud_desc').value = '';
+    // keep the dropdown as "(no change)" but remember current DB status
     document.getElementById('ud_status').value = '';
+    document.getElementById('ud_current_status').value = status || '';
     document.getElementById('ud_msg').textContent = 'Loaded request ' + id + ' into editor below.';
+    showUndoButtonIfNeeded();
   }
 
   // ===== Init =====
   document.addEventListener('DOMContentLoaded', async () => {
     await loadCategories();
     loadMyRequests();
+    // keep Undo button visibility in sync with any manual status selection
+    const statusSel = document.getElementById('ud_status');
+    if (statusSel) statusSel.addEventListener('change', showUndoButtonIfNeeded);
+    showUndoButtonIfNeeded();
   });
 </script>
 </body>
