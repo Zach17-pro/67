@@ -29,7 +29,7 @@
   textarea { min-height: 80px; }
   input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; background: white; }
   table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
-  th, td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; vertical-align: middle; }
   th { text-align: left; background: #f8fafc; color: #1f2937; font-weight: 600; }
   tr:last-child td { border-bottom: none; }
   .actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -53,7 +53,7 @@
     </div>
   </div>
 
-  <!-- Session -->
+  <!-- Session (kept as-is) -->
   <div class="section">
     <div class="title">Session</div>
     <div class="content row">
@@ -176,7 +176,7 @@
     </div>
   </div>
 
-  <!-- #27 Search My Requests (category now dropdown) -->
+  <!-- #27 Search My Requests -->
   <div class="section">
     <div class="title">Search My Requests</div>
     <div class="content">
@@ -301,6 +301,7 @@
       <div class="row" style="margin-top:16px;">
         <div class="col-12" id="pm_table_wrap"></div>
       </div>
+      <div id="pm_msg" class="muted"></div>
     </div>
   </div>
 </div>
@@ -329,6 +330,22 @@
   function escapeAttr(s) {
     if (s == null) return '';
     return String(s).replace(/'/g, "\\'");
+  }
+
+  // Decide whether to reload via search or view
+  function reloadMatchesTable() {
+    const hasSearch =
+      (document.getElementById('sm_keyword').value || '').trim() !== '' ||
+      (document.getElementById('sm_category').value || '').trim() !== '' ||
+      (document.getElementById('sm_svc_from').value || '').trim() !== '' ||
+      (document.getElementById('sm_svc_to').value || '').trim() !== '' ||
+      (document.getElementById('sm_cmp_from').value || '').trim() !== '' ||
+      (document.getElementById('sm_cmp_to').value || '').trim() !== '';
+    if (hasSearch) {
+      searchPastMatches();
+    } else {
+      viewPastMatches();
+    }
   }
 
   // ===== Categories: load once, populate all selects =====
@@ -396,6 +413,7 @@
     loadMyRequests();
     document.getElementById('cr_msg').textContent = '';
     document.getElementById('ud_msg').textContent = '';
+    reloadMatchesTable();
   }
 
   // ===== CRUD: Requests =====
@@ -500,7 +518,7 @@
       msg.textContent = 'PIN User ID and Request ID are required.';
       return;
     }
-    if (!confirm('Delete this request?')) return;
+    if (!confirm('Delete this request? This will fail if matches exist.')) return;
     try {
       const res = await fetch('/api/pin/requests', {
         method: 'DELETE',
@@ -511,6 +529,7 @@
       if (!res.ok || !data.success) throw new Error(data.error || 'Delete failed');
       msg.textContent = 'Deleted.';
       loadMyRequests();
+      reloadMatchesTable();
     } catch (e) {
       msg.textContent = e.message;
     }
@@ -544,7 +563,7 @@
     }
   }
 
-  // ===== Past Matches =====
+  // ===== Past Matches: LOAD =====
   async function viewPastMatches() {
     const pin_user_id = parseInt(getPin(), 10);
     const category_id = parseIntVal('vm_category');
@@ -601,6 +620,62 @@
     }
   }
 
+  // ===== Past Matches: ACTIONS =====
+  async function deleteMatch(match_id) {
+    const pin_user_id = parseInt(getPin(), 10);
+    const msg = document.getElementById('pm_msg');
+    msg.textContent = '';
+    if (!match_id || !pin_user_id) {
+      msg.textContent = 'Missing match_id or PIN.';
+      return;
+    }
+    if (!confirm('Delete this match? This cannot be undone.')) return;
+
+    try {
+      const res = await fetch('/api/pin/matches', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id, pin_user_id })
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || 'Delete match failed');
+      }
+      msg.textContent = `Match ${match_id} deleted.`;
+      reloadMatchesTable();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
+  async function undoComplete(request_id) {
+    const pin_user_id = parseInt(getPin(), 10);
+    const msg = document.getElementById('pm_msg');
+    msg.textContent = '';
+    if (!request_id || !pin_user_id) {
+      msg.textContent = 'Missing request_id or PIN.';
+      return;
+    }
+    if (!confirm('Undo completion for this request? This will remove all its matches and reopen it.')) return;
+
+    try {
+      const res = await fetch('/api/pin/matches/undo-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id, pin_user_id, new_status: 'Open' })
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || data.message || 'Undo complete failed');
+      }
+      msg.textContent = `Request ${request_id} reopened; ${data.matches_deleted ?? 0} match(es) removed.`;
+      loadMyRequests();
+      reloadMatchesTable();
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
   // ===== Renderers =====
   function renderRequestsTable(rows) {
     if (!rows || rows.length === 0) return '<div class="muted">No requests found.</div>';
@@ -634,12 +709,19 @@
         <td>${escapeHtml(m.status || '')}</td>
         <td>${escapeHtml(m.category_name || (m.category_id ?? ''))}</td>
         <td>${escapeHtml(m.location || '')}</td>
+        <td class="actions">
+          <button class="btn btn-secondary" onclick="undoComplete(${m.request_id})">Undo Complete</button>
+          <button class="btn btn-danger" onclick="deleteMatch(${m.match_id})">Delete Match</button>
+        </td>
       </tr>
     `).join('');
     return `
       <table>
         <thead>
-          <tr><th>Match ID</th><th>Request</th><th>Service Date</th><th>Completed</th><th>Status</th><th>Category</th><th>Location</th></tr>
+          <tr>
+            <th>Match ID</th><th>Request</th><th>Service Date</th><th>Completed</th>
+            <th>Status</th><th>Category</th><th>Location</th><th>Actions</th>
+          </tr>
         </thead>
         <tbody>${tr}</tbody>
       </table>`;

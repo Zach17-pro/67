@@ -1,7 +1,7 @@
 # app/entity/match_repository.py
 from __future__ import annotations
 
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Tuple
 from datetime import date, datetime
 from entity.match import Match
 
@@ -61,7 +61,7 @@ class MatchRepository:
         finally:
             cur.close()
 
-    # ---------- list/view past matches ----------
+        # --- list/view past matches (robust) ---
     def list_past_matches(
         self,
         pin_user_id: int,
@@ -74,8 +74,8 @@ class MatchRepository:
         order_desc: bool = True,
     ) -> List[Match]:
         """
-        View past matches (defaults to completed) with optional filters.
-        Uses a tolerant status check to handle casing/whitespace changes.
+        View past matches (status 'Completed' case-insensitive) with optional filters.
+        Requires non-NULL completion_date to count as 'past'.
         """
         sql = """
             SELECT
@@ -87,8 +87,8 @@ class MatchRepository:
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
             WHERE m.pin_user_id = %s
-              AND TRIM(LOWER(m.status)) IN ('completed','complete')
-              -- AND m.completion_date IS NOT NULL   -- uncomment if you require a timestamp
+            AND LOWER(TRIM(m.status)) = 'completed'
+            AND m.completion_date IS NOT NULL
         """
         params: List[Any] = [pin_user_id]
 
@@ -122,13 +122,13 @@ class MatchRepository:
         finally:
             cur.close()
 
-    # ---------- search past matches ----------
+        # --- search past matches (robust) ---
     def search_past_matches(
         self,
         pin_user_id: int,
         *,
-        category_id: Optional[int] = None,          # filter by service category
-        keyword: Optional[str] = None,              # matches request.title/description
+        category_id: Optional[int] = None,
+        keyword: Optional[str] = None,
         service_date_from: Optional[date] = None,
         service_date_to: Optional[date] = None,
         completion_from: Optional[datetime] = None,
@@ -136,7 +136,8 @@ class MatchRepository:
         order_desc: bool = True,
     ) -> List[Match]:
         """
-        Search past matches (Completed) by service and date period; optional keyword on request.
+        Search past matches (status 'Completed' case-insensitive) by optional category,
+        keyword (title/description), and date ranges. Requires non-NULL completion_date.
         """
         sql = """
             SELECT
@@ -148,8 +149,8 @@ class MatchRepository:
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
             WHERE m.pin_user_id = %s
-              AND TRIM(LOWER(m.status)) IN ('completed','complete')
-              -- AND m.completion_date IS NOT NULL   -- optional
+            AND LOWER(TRIM(m.status)) = 'completed'
+            AND m.completion_date IS NOT NULL
         """
         params: List[Any] = [pin_user_id]
 
