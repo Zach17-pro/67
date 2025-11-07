@@ -61,7 +61,75 @@ class MatchRepository:
         finally:
             cur.close()
 
-        # --- list/view past matches (robust) ---
+    # ---------- writer: ensure a Completed row exists ----------
+    def ensure_completed_match(
+        self,
+        *,
+        request_id: int,
+        pin_user_id: int,
+        csr_user_id: int,
+        service_date: Optional[date] = None,
+        completion_date: Optional[datetime] = None,
+    ) -> int:
+        """
+        Ensure there is a 'Completed' match row for (request_id, pin_user_id).
+        Returns the match_id (existing or newly inserted).
+
+        Guarantees:
+          - status is 'Completed'
+          - completion_date is NOT NULL (set to NOW() if not provided)
+        """
+        # 1) Look for an existing Completed row for this request+PIN
+        cur = self.db.cursor(dictionary=True, buffered=True)
+        try:
+            cur.execute(
+                """
+                SELECT match_id, completion_date
+                FROM `match`
+                WHERE request_id = %s
+                  AND pin_user_id = %s
+                  AND LOWER(TRIM(status)) = 'completed'
+                LIMIT 1
+                """,
+                (request_id, pin_user_id),
+            )
+            existing = cur.fetchone()
+        finally:
+            cur.close()
+
+        if existing:
+            # If present but completion_date is NULL, set it now
+            if not existing["completion_date"]:
+                cur2 = self.db.cursor()
+                try:
+                    cur2.execute(
+                        "UPDATE `match` SET completion_date = COALESCE(%s, NOW()) WHERE match_id = %s",
+                        (completion_date, existing["match_id"]),
+                    )
+                    self.db.commit()
+                finally:
+                    cur2.close()
+            return existing["match_id"]
+
+        # 2) Insert a new Completed match
+        cur3 = self.db.cursor()
+        try:
+            cur3.execute(
+                """
+                INSERT INTO `match`
+                    (request_id, csr_user_id, pin_user_id, service_date, completion_date, status)
+                VALUES
+                    (%s, %s, %s, COALESCE(%s, CURDATE()), COALESCE(%s, NOW()), 'Completed')
+                """,
+                (request_id, csr_user_id, pin_user_id, service_date, completion_date),
+            )
+            new_id = cur3.lastrowid
+            self.db.commit()
+            return new_id
+        finally:
+            cur3.close()
+
+    # --- list/view past matches (robust) ---
     def list_past_matches(
         self,
         pin_user_id: int,
@@ -122,7 +190,7 @@ class MatchRepository:
         finally:
             cur.close()
 
-        # --- search past matches (robust) ---
+    # --- search past matches (robust) ---
     def search_past_matches(
         self,
         pin_user_id: int,

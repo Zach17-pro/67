@@ -29,7 +29,7 @@
   textarea { min-height: 80px; }
   input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; background: white; }
   table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
-  th, td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; vertical-align: middle; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
   th { text-align: left; background: #f8fafc; color: #1f2937; font-weight: 600; }
   tr:last-child td { border-bottom: none; }
   .actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -42,6 +42,7 @@
   .note { font-size: 12px; color: #6b7280; margin-top: 6px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .hidden { display: none !important; }
+  .id-badge { display:inline-block; padding:6px 10px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -53,18 +54,16 @@
     </div>
   </div>
 
-  <!-- Session (kept as-is) -->
+  <!-- Session (read-only) -->
   <div class="section">
     <div class="title">Session</div>
     <div class="content row">
       <div class="col-4">
-        <label>PIN User ID
-          <input id="pinId" type="number" value="3" />
-        </label>
-        <div class="note">Change to the logged-in PIN id if needed.</div>
-      </div>
-      <div class="col-8 actions">
-        <button class="btn" onclick="applyPinId()">Apply</button>
+        <div>PIN User ID</div>
+        <div id="pinIdDisplay" class="id-badge">—</div>
+        <!-- keep a hidden input so existing JS works -->
+        <input id="pinId" type="hidden" value="3" />
+        <div class="note">This is your logged-in PIN id.</div>
       </div>
     </div>
   </div>
@@ -301,7 +300,6 @@
       <div class="row" style="margin-top:16px;">
         <div class="col-12" id="pm_table_wrap"></div>
       </div>
-      <div id="pm_msg" class="muted"></div>
     </div>
   </div>
 </div>
@@ -330,22 +328,6 @@
   function escapeAttr(s) {
     if (s == null) return '';
     return String(s).replace(/'/g, "\\'");
-  }
-
-  // Decide whether to reload via search or view
-  function reloadMatchesTable() {
-    const hasSearch =
-      (document.getElementById('sm_keyword').value || '').trim() !== '' ||
-      (document.getElementById('sm_category').value || '').trim() !== '' ||
-      (document.getElementById('sm_svc_from').value || '').trim() !== '' ||
-      (document.getElementById('sm_svc_to').value || '').trim() !== '' ||
-      (document.getElementById('sm_cmp_from').value || '').trim() !== '' ||
-      (document.getElementById('sm_cmp_to').value || '').trim() !== '';
-    if (hasSearch) {
-      searchPastMatches();
-    } else {
-      viewPastMatches();
-    }
   }
 
   // ===== Categories: load once, populate all selects =====
@@ -400,21 +382,16 @@
     }
   }
 
-  // ===== Session controls =====
+  // ===== Session (read-only) =====
   (function initPinFromQuery() {
     const params = new URLSearchParams(location.search);
     const qPin = params.get('pin_user_id');
-    if (qPin) document.getElementById('pinId').value = qPin;
+    const hidden = document.getElementById('pinId');
+    const display = document.getElementById('pinIdDisplay');
+    const value = qPin || hidden.value || '';
+    hidden.value = value;
+    display.textContent = value || '—';
   })();
-
-  function applyPinId() {
-    const id = document.getElementById('pinId').value.trim();
-    if (!id) return alert('PIN User ID is required.');
-    loadMyRequests();
-    document.getElementById('cr_msg').textContent = '';
-    document.getElementById('ud_msg').textContent = '';
-    reloadMatchesTable();
-  }
 
   // ===== CRUD: Requests =====
   async function createRequest() {
@@ -518,7 +495,7 @@
       msg.textContent = 'PIN User ID and Request ID are required.';
       return;
     }
-    if (!confirm('Delete this request? This will fail if matches exist.')) return;
+    if (!confirm('Delete this request?')) return;
     try {
       const res = await fetch('/api/pin/requests', {
         method: 'DELETE',
@@ -529,7 +506,6 @@
       if (!res.ok || !data.success) throw new Error(data.error || 'Delete failed');
       msg.textContent = 'Deleted.';
       loadMyRequests();
-      reloadMatchesTable();
     } catch (e) {
       msg.textContent = e.message;
     }
@@ -563,7 +539,7 @@
     }
   }
 
-  // ===== Past Matches: LOAD =====
+  // ===== Past Matches =====
   async function viewPastMatches() {
     const pin_user_id = parseInt(getPin(), 10);
     const category_id = parseIntVal('vm_category');
@@ -620,62 +596,6 @@
     }
   }
 
-  // ===== Past Matches: ACTIONS =====
-  async function deleteMatch(match_id) {
-    const pin_user_id = parseInt(getPin(), 10);
-    const msg = document.getElementById('pm_msg');
-    msg.textContent = '';
-    if (!match_id || !pin_user_id) {
-      msg.textContent = 'Missing match_id or PIN.';
-      return;
-    }
-    if (!confirm('Delete this match? This cannot be undone.')) return;
-
-    try {
-      const res = await fetch('/api/pin/matches', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id, pin_user_id })
-      });
-      const data = await res.json();
-      if (!res.ok || data.success === false) {
-        throw new Error(data.error || 'Delete match failed');
-      }
-      msg.textContent = `Match ${match_id} deleted.`;
-      reloadMatchesTable();
-    } catch (e) {
-      msg.textContent = e.message;
-    }
-  }
-
-  async function undoComplete(request_id) {
-    const pin_user_id = parseInt(getPin(), 10);
-    const msg = document.getElementById('pm_msg');
-    msg.textContent = '';
-    if (!request_id || !pin_user_id) {
-      msg.textContent = 'Missing request_id or PIN.';
-      return;
-    }
-    if (!confirm('Undo completion for this request? This will remove all its matches and reopen it.')) return;
-
-    try {
-      const res = await fetch('/api/pin/matches/undo-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id, pin_user_id, new_status: 'Open' })
-      });
-      const data = await res.json();
-      if (!res.ok || data.success === false) {
-        throw new Error(data.error || data.message || 'Undo complete failed');
-      }
-      msg.textContent = `Request ${request_id} reopened; ${data.matches_deleted ?? 0} match(es) removed.`;
-      loadMyRequests();
-      reloadMatchesTable();
-    } catch (e) {
-      msg.textContent = e.message;
-    }
-  }
-
   // ===== Renderers =====
   function renderRequestsTable(rows) {
     if (!rows || rows.length === 0) return '<div class="muted">No requests found.</div>';
@@ -709,19 +629,12 @@
         <td>${escapeHtml(m.status || '')}</td>
         <td>${escapeHtml(m.category_name || (m.category_id ?? ''))}</td>
         <td>${escapeHtml(m.location || '')}</td>
-        <td class="actions">
-          <button class="btn btn-secondary" onclick="undoComplete(${m.request_id})">Undo Complete</button>
-          <button class="btn btn-danger" onclick="deleteMatch(${m.match_id})">Delete Match</button>
-        </td>
       </tr>
     `).join('');
     return `
       <table>
         <thead>
-          <tr>
-            <th>Match ID</th><th>Request</th><th>Service Date</th><th>Completed</th>
-            <th>Status</th><th>Category</th><th>Location</th><th>Actions</th>
-          </tr>
+          <tr><th>Match ID</th><th>Request</th><th>Service Date</th><th>Completed</th><th>Status</th><th>Category</th><th>Location</th></tr>
         </thead>
         <tbody>${tr}</tbody>
       </table>`;
