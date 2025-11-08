@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, session, flash, current_app
+from flask import Blueprint, jsonify, render_template, redirect, url_for, request, session, flash, current_app
 from entity.user_repository import UserRepository
 from control.auth_controller import AuthController
 
@@ -37,3 +37,10 @@ def logout():
     session.pop("user", None)
     flash("You have been logged out!")
     return redirect(url_for("auth.home"))
+
+@auth_api.get("/userId")
+def getUserId():
+    try:
+        return jsonify({'id': session['user']['id']}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

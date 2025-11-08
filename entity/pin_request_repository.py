@@ -13,6 +13,11 @@
 #29
 # As a PIN, I want to view past matches by services, date period so that I can reference completed services.
 
+#32
+# As a PIN, I want to view the number of times my request has been viewed so that I can gauge interest
+#33
+# As a pin, I want to view number of times my request has been shortlisted so that I know potential matches
+
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 from entity.pin_request import Request
@@ -248,12 +253,12 @@ class RequestRepository:
             cur.close()
 
     # ---------- #27: Search my requests ----------
-    def search_requests(
+    def search_user_requests(
         self,
-        pin_user_id: int,
+        pin_user_id: Optional[int],
         *,
         keyword: Optional[str] = None,       # matches title/description
-        status: Optional[str] = None,
+        status = None,
         category_id: Optional[int] = None,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
@@ -277,8 +282,13 @@ class RequestRepository:
             params.extend([like, like])
 
         if status:
-            sql += " AND status = %s"
-            params.append(status)
+            if isinstance(status, (list, tuple)):
+                placeholders = ", ".join(["%s"] * len(status))
+                sql += f" AND status IN ({placeholders})"
+                params.extend(list(status))
+            else:
+                sql += " AND status = %s"
+                params.append(status)
 
         if category_id is not None:
             sql += " AND category_id = %s"
@@ -293,6 +303,50 @@ class RequestRepository:
             params.append(date_to)
 
         sql += " ORDER BY created_at " + ("DESC" if order_desc else "ASC")
+
+        cur = self.db.cursor(dictionary=True)
+        cur.execute(sql, tuple(params))
+        rows = cur.fetchall()
+        cur.close()
+        return [self._row_to_request(r) for r in rows]
+    
+    def search_requests_by_status(
+        self,
+        *,
+        status = None,
+        query = "",
+        order_desc: bool = True,
+    ) -> List[Request]:
+        """
+        Search a PIN's requests using common filters.
+        """
+        sql = f"""
+            SELECT request_id, pin_user_id, title, description, status,
+                   created_at, updated_at, view_count, shortlist_count,
+                   category_id, location
+            FROM request 
+            Where
+        """
+
+        params = []
+
+        # Support single status (string) or multiple (list/tuple)
+        if status:
+            if isinstance(status, (list, tuple)):
+                placeholders = ", ".join(["%s"] * len(status))
+                sql += f" status IN ({placeholders})"
+                params.extend(list(status))
+            else:
+                sql += " status = %s"
+                params.append(status)
+                
+        print(query)
+        sql += " AND (request.title LIKE %s OR request.description LIKE %s)"
+        params.append(f"%{query}%")
+        params.append(f"%{query}%")
+
+        sql += " ORDER BY created_at " + ("DESC" if order_desc else "ASC")
+        
 
         cur = self.db.cursor(dictionary=True)
         cur.execute(sql, tuple(params))

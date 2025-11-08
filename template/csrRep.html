@@ -1,279 +1,663 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CSR Rep Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SixSeven — Admin</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      display: flex;
-      background: #f4f6f8;
-    }
-    nav {
-      width: 230px;
-      background: #2c3e50;
-      color: white;
-      height: 100vh;
-      position: fixed;
-      top: 0;
-      left: 0;
-      overflow-y: auto;
-    }
-    nav h2 {
-      text-align: center;
-      padding: 15px;
-      background: #1a252f;
-      margin: 0;
-    }
-    nav ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    nav li a {
-      display: block;
-      padding: 12px 15px;
-      color: white;
-      text-decoration: none;
-    }
-    nav li a:hover, nav li a.active {
-      background: #3498db;
-    }
-    main {
-      margin-left: 230px;
-      padding: 25px;
-      width: 100%;
-    }
-    section {
-      display: none;
-    }
-    section.active {
-      display: block;
-      animation: fade 0.3s;
-    }
-    @keyframes fade {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    button {
-      background: #3498db;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2980b9;
-    }
-    input, select {
-      padding: 8px;
-      margin: 5px;
-      width: 200px;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #ecf0f1;
-    }
+      body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; }
+      .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); width: 720px; max-width: 95%; position: relative; }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+      .header-left { display: flex; gap: 12px; align-items: center; }
+      .header h2 { margin: 0; font-size: 20px; }
+      .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; }
+      .action-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+      .action-row > div { flex: 1; }
+      label { display: block; margin-bottom: 4px; font-size: 13px; }
+      select, input[type="text"], input[type="password"], input[type="email"] { width: 100%; padding: 8px 10px; border: 1px solid #ccd6e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+      .btn { padding: 8px 16px; background: #2b78e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+      .btn.secondary { background: #6b7280; }
+      .btn.danger { background: #b00020; }
+      .btn.view { background: #28a745; }
+      .form-container { background: #f8f9fa; padding: 16px; border-radius: 6px; margin-bottom: 16px; display: none; }
+      .form-container.active { display: block; }
+      .form-fields { display: flex; gap: 12px; margin-bottom: 12px; }
+      .form-fields > div { flex: 1; }
+      .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+      .modal.active { display: flex; align-items: center; justify-content: center; }
+      .modal-content { background: white; border-radius: 8px; padding: 24px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .modal-header h3 { margin: 0; font-size: 18px; }
+      .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; }
+      .filter-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+      .filter-row > div:first-child { flex: 2; }
+      .filter-row > div:nth-child(2) { flex: 1; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+      th { background: #f8f9fa; }
+      .table-actions { display: flex; gap: 6px; }
+      .table-actions .btn { padding: 6px 12px; font-size: 13px; }
+      .hint { color: #666; font-size: 12px; margin-top: 16px; }
+      .section { display: none; }
+      .section.active { display: block; }
   </style>
 </head>
 <body>
-  <nav>
-    <h2>CSR Rep</h2>
-    <ul>
-      <li><a href="#" class="active" onclick="showSection('searchRequests')">Search PIN Requests</a></li>
-      <li><a href="#" onclick="showSection('viewRequest')">View Request Details</a></li>
-      <li><a href="#" onclick="showSection('saveShortlist')">Save to Shortlist</a></li>
-      <li><a href="#" onclick="showSection('searchShortlist')">Search Shortlist</a></li>
-      <li><a href="#" onclick="showSection('viewShortlist')">View Shortlist</a></li>
-      <li><a href="#" onclick="showSection('searchPastMatches')">Search Past Matches</a></li>
-      <li><a href="#" onclick="showSection('viewPastMatches')">View Past Matches</a></li>
-      <li><a href="#" style="background:#e74c3c; text-align:center;" onclick="logout()">Logout</a></li>
-    </ul>
-</nav>
-
-
-  <main>
-    <!-- 1️⃣ Search PIN Requests -->
-    <section id="searchRequests" class="active">
-      <div class="card">
-        <h2>Search PIN Requests</h2>
-        <input type="text" id="searchQuery" placeholder="Enter keyword">
-        <button onclick="searchRequests()">Search</button>
-        <table id="searchResults"><thead><tr><th>ID</th><th>Title</th><th>Status</th></tr></thead><tbody></tbody></table>
+  <div class="card">
+    <div class="header">
+      <div class="header-left">
+        <h2>CSR Panel</h2>
+        <select id="sectionSelect" style="width: auto; padding: 6px 10px;">
+          <option value="shortlist">My Shortlist</option>
+          <option value="activeRequests">Active Request</option>
+        </select>
       </div>
-    </section>
+      <a href="/logout" class="logout-btn">🚪 Logout</a>
+    </div>
 
-    <!-- 2️⃣ View Request Details -->
-    <section id="viewRequest">
-      <div class="card">
-        <h2>View Request Details</h2>
-        <input type="number" id="requestId" placeholder="Enter Request ID">
-        <button onclick="viewRequest()">View</button>
-        <pre id="requestDetails"></pre>
+    <!-- User Accounts Section -->
+    <div id="shortlistSelection" class="section active">
+      <div class="action-row">
+        <div>
+          <label for="actionSelect">Select Action</label>
+          <select id="actionSelect">
+            <option value="">-- Choose an action --</option>
+            <option value="create">Create User</option>
+            <option value="update">Update User</option>
+            <option value="delete">Delete User</option>
+          </select>
+        </div>
+        <button class="btn view" id="viewBtn">View Shortlists</button>
       </div>
-    </section>
 
-    <!-- 3️⃣ Save to Shortlist -->
-    <section id="saveShortlist">
-      <div class="card">
-        <h2>Save to Shortlist</h2>
-        <input type="number" id="shortlistReqId" placeholder="Request ID">
-        <input type="number" id="shortlistRepId" placeholder="Rep ID">
-        <button onclick="saveShortlist()">Save</button>
-        <p id="saveShortlistMsg"></p>
+      <!-- Create Form -->
+      <div id="createForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="createUsername">Username *</label>
+            <input type="text" id="createUsername" placeholder="Enter username" />
+          </div>
+          <div>
+            <label for="createPassword">Password *</label>
+            <input type="password" id="createPassword" placeholder="Enter password" />
+          </div>
+          <div>
+            <label for="createRole">Role *</label>
+            <select id="createRole">
+              <option>Admin</option>
+              <option>Csr_Rep</option>
+              <option>PIN_Support</option>
+              <option>Platform_Manager</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+          <button class="btn" onclick="submitCreate()">Create User</button>
+        </div>
       </div>
-    </section>
 
-    <!-- 4️⃣ Search Shortlist -->
-    <section id="searchShortlist">
-      <div class="card">
-        <h2>Search Shortlist</h2>
-        <input type="number" id="searchRepId" placeholder="Rep ID">
-        <input type="text" id="shortlistKeyword" placeholder="Keyword">
-        <button onclick="searchShortlist()">Search</button>
-        <table id="shortlistResults"><thead><tr><th>ID</th><th>Title</th></tr></thead><tbody></tbody></table>
+      <!-- Update Form -->
+      <div id="updateForm" class="form-container">
+        <div class="form-fields">
+          <div>
+            <label for="updateId">User ID *</label>
+            <input type="text" id="updateId" placeholder="Enter user ID" />
+          </div>
+          <div>
+            <label for="updateUsername">Username</label>
+            <input type="text" id="updateUsername" placeholder="New username" />
+          </div>
+          <div>
+            <label for="updatePassword">Password</label>
+            <input type="password" id="updatePassword" placeholder="New password (leave blank to keep current)" />
+          </div>
+          <div>
+            <label for="updateRole">Role</label>
+            <select id="updateRole">
+              <option>Admin</option>
+              <option>Csr_Rep</option>
+              <option>PIN_Support</option>
+              <option>Platform_Manager</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+          <button class="btn" onclick="submitUpdate()">Update User</button>
+        </div>
       </div>
-    </section>
 
-    <!-- 5️⃣ View Shortlist -->
-    <section id="viewShortlist">
-      <div class="card">
-        <h2>View Shortlist</h2>
-        <input type="number" id="viewRepId" placeholder="Rep ID">
-        <button onclick="viewShortlist()">View</button>
-        <table id="viewShortlistTable"><thead><tr><th>ID</th><th>Request</th></tr></thead><tbody></tbody></table>
+        <!-- Delete Form -->
+        <div id="deleteForm" class="form-container">
+          <div class="form-fields">
+            <div>
+              <label for="deleteId">User ID *</label>
+              <input type="text" id="deleteId" placeholder="Enter user ID to delete" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+            <button class="btn danger" onclick="submitDelete()">Delete User</button>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <!-- 6️⃣ Search Past Matches -->
-    <section id="searchPastMatches">
-      <div class="card">
-        <h2>Search Past Matches</h2>
-        <input type="text" id="service" placeholder="Service">
-        <input type="date" id="startDate">
-        <input type="date" id="endDate">
-        <button onclick="searchPastMatches()">Search</button>
-        <table id="pastMatchesTable"><thead><tr><th>Match ID</th><th>Service</th><th>Date</th></tr></thead><tbody></tbody></table>
+    <!-- Active Request Section -->
+    <div id="activeRequestSection" class="section">
+      
+      <div class="filter-row">
+        <div>
+          <label for="filterSearch">Search</label>
+          <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
+        </div>
+        <button class="btn" onclick="applyFilters()">Apply</button>
+        <button class="btn secondary" onclick="loadActiveRequest()">Reset</button>
       </div>
-    </section>
 
-    <!-- 7️⃣ View Past Matches -->
-    <section id="viewPastMatches">
-      <div class="card">
-        <h2>View Past Matches</h2>
-        <input type="text" id="viewService" placeholder="Service">
-        <input type="date" id="viewStart">
-        <input type="date" id="viewEnd">
-        <button onclick="viewPastMatches()">View</button>
-        <table id="viewPastTable"><thead><tr><th>Match ID</th><th>Service</th><th>Date</th></tr></thead><tbody></tbody></table>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>title</th>
+            <th>description</th>
+            <th>location</th>
+            <th>status</th>
+          </tr>
+        </thead>
+        <tbody id="profileTableBody">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+  </div>
+
+
+  <!-- View Users Modal -->
+  <div id="viewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>My Shortlist</h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
       </div>
-    </section>
-  </main>
+      
+      <div class="filter-row">
+        <div>
+          <label for="filterSearch">Search</label>
+          <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
+        </div>
+        <button class="btn" onclick="applyFilters()">Apply</button>
+        <button class="btn secondary" onclick="loadMyShortlist()">Reset</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>title</th>
+            <th>description</th>
+            <th>location</th>
+            <th>notes</th>
+            <th>status</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- View Profiles Modal -->
 
   <script>
-    // Navigation
-    function showSection(id) {
-      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-      document.querySelector(`nav a[onclick="showSection('${id}')"]`).classList.add('active');
-      document.getElementById(id).classList.add('active');
+
+    let allUsers = [];
+    let allProfiles = [];
+
+    // Section switching
+    document.getElementById('sectionSelect').addEventListener('change', function() {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      if (this.value === 'shortlist') {
+        document.getElementById('shortlistSelection').classList.add('active');
+      } else if (this.value === 'activeRequests') {
+        document.getElementById('activeRequestSection').classList.add('active');
+        loadActiveRequest()
+      }
+      cancelAction();
+      cancelProfileAction();
+    });
+
+    // User Accounts functionality
+    document.getElementById('actionSelect').addEventListener('change', function() {
+      document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
+      if (this.value) {
+        document.getElementById(this.value + 'Form').classList.add('active');
+      }
+    });
+
+    function cancelAction() {
+      document.getElementById('actionSelect').value = '';
+      document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
+      document.getElementById('createUsername').value = '';
+      document.getElementById('createPassword').value = '';
+      document.getElementById('updateId').value = '';
+      document.getElementById('updateUsername').value = '';
+      document.getElementById('updatePassword').value = '';
+      document.getElementById('deleteId').value = '';
     }
 
-    // 1️⃣ Search PIN Requests
-    async function searchRequests() {
-      const q = document.getElementById('searchQuery').value;
-      const res = await fetch(`/api/csr/search?query=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      const tbody = document.querySelector('#searchResults tbody');
-      tbody.innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.title || ''}</td><td>${r.status || ''}</td></tr>`).join('');
+    document.getElementById('viewBtn').addEventListener('click', function() {
+      document.getElementById('viewModal').classList.add('active');
+      loadMyShortlist();
+    });
+
+    function closeModal() {
+      document.getElementById('viewModal').classList.remove('active');
     }
 
-    // 2️⃣ View Request Details
-    async function viewRequest() {
-      const id = document.getElementById('requestId').value;
-      const res = await fetch(`/api/csr_rep/view_request/${id}`);
-      const data = await res.json();
-      document.getElementById('requestDetails').textContent = JSON.stringify(data, null, 2);
+    document.getElementById('viewModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    
+
+    // Active Request functionality
+    document.getElementById('profileActionSelect').addEventListener('change', function() {
+      document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
+      if (this.value) {
+        document.getElementById(this.value + 'Form').classList.add('active');
+      }
+    });
+
+    function cancelProfileAction() {
+      document.getElementById('profileActionSelect').value = '';
+      document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
+      document.getElementById('profileUpdateId').value = '';
+      document.getElementById('profileFullName').value = '';
+      document.getElementById('profileEmail').value = '';
+
+      document.getElementById('createProfileUsername').value = '';
+      document.getElementById('createProfileFullName').value = '';
+      document.getElementById('createProfileEmail').value = '';
+      document.getElementById('deleteProfileId').value = '';
     }
 
-    // 3️⃣ Save to Shortlist
-    async function saveShortlist() {
-      const reqId = document.getElementById('shortlistReqId').value;
-      const repId = document.getElementById('shortlistRepId').value;
-      const res = await fetch(`/api/csr_rep/save_shortlist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: reqId, rep_id: repId })
+
+
+    function closeProfilesModal() {
+      document.getElementById('viewProfilesModal').classList.remove('active');
+    }
+
+    document.getElementById('viewProfilesModal').addEventListener('click', function(e) {
+      if (e.target === this) closeProfilesModal();
+    });
+
+    async function callApi(path, opts) {
+      try {
+        const res = await fetch(path, opts);
+        if (!res.ok) {
+          const text = await res.text().catch(() => res.statusText);
+          throw new Error(text || 'Request failed');
+        }
+        return await res.json().catch(() => null);
+      } catch (err) {
+        throw new Error('API call failed: ' + err.message);
+      }
+    }
+
+    // User Accounts CRUD
+    async function submitCreate() {
+      const username = document.getElementById('createUsername').value.trim();
+      const password = document.getElementById('createPassword').value;
+      const role = document.getElementById('createRole').value;
+      
+      if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+      }
+
+      try {
+        await callApi(api.create, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, role })
+        });
+        alert('User created successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function submitUpdate() {
+      const id = document.getElementById('updateId').value.trim();
+      const username = document.getElementById('updateUsername').value.trim();
+      const password = document.getElementById('updatePassword').value;
+      const role = document.getElementById('updateRole').value;
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
+      try {
+        await callApi(api.update, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, username, password, role })
+        });
+        alert('User updated successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function submitDelete() {
+      const id = document.getElementById('deleteId').value.trim();
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
+      if (!confirm('Delete user ID ' + id + '?')) return;
+
+      try {
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User deleted successfully!');
+        cancelAction();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function getUserId() {
+    try {
+      const url = new URL('/userId', location.origin);
+      const res = await fetch(url);
+      const rows = await res.json();
+      return rows
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error searching requests</div>';
+    }
+  }
+
+    async function loadMyShortlist() {
+      try {
+        const data = await getUserId(); 
+        value = typeof data === 'object' && data !== null
+        ? (data.id ?? '')
+        : data;
+        const data2 = await callApi(`/api/shortlist?csr_id=${value}`, { method: 'GET' });
+        allUsers = data2 || [];
+        renderShortlist(allUsers);
+        document.getElementById('filterSearch').value = '';
+      } catch (e) {
+        alert(e.message);
+        renderShortlist([]);
+      }
+    }
+
+    function applyFilters() {
+      const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase();
+      
+      let filtered = allUsers;
+      if (searchTerm) {
+        filtered = filtered.filter(u => 
+          String(u.id).includes(searchTerm) || 
+          u.title.toLowerCase().includes(searchTerm) || 
+          u.description.toLowerCase().includes(searchTerm) || 
+          u.notes.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      renderShortlist(filtered);
+    }
+
+    function renderShortlist(data) {
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No shortlist found</td></tr>';
+        return;
+      }
+
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.shortlist_id)}</td>
+          <td>${escapeHtml(row.title)}</td>
+          <td>${escapeHtml(row.description)}</td>
+          <td>${escapeHtml(row.location)}</td>
+          <td>${escapeHtml(row.notes)}</td>
+          <td>${escapeHtml(row.status)}</td>
+          <td class="table-actions">
+            <button class="btn danger" onclick="quickDelete(${row.shortlist_id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      const data = await res.json();
-      document.getElementById('saveShortlistMsg').textContent = data.success ? "Saved!" : data.error;
     }
 
-    // 4️⃣ Search Shortlist
-    async function searchShortlist() {
-      const repId = document.getElementById('searchRepId').value;
-      const keyword = document.getElementById('shortlistKeyword').value;
-      const res = await fetch(`/api/csr_rep/search_shortlist?rep_id=${repId}&keyword=${encodeURIComponent(keyword)}`);
-      const data = await res.json();
-      const tbody = document.querySelector('#shortlistResults tbody');
-      tbody.innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.title || ''}</td></tr>`).join('');
+    function editUser(id, username, role) {
+      closeModal();
+      document.getElementById('sectionSelect').value = 'accounts';
+      document.getElementById('shortlistSelection').classList.add('active');
+      document.getElementById('activeRequestSection').classList.remove('active');
+      document.getElementById('actionSelect').value = 'update';
+      document.getElementById('updateForm').classList.add('active');
+      document.getElementById('updateId').value = id;
+      document.getElementById('updateUsername').value = username;
+      document.getElementById('updatePassword').value = '';
+      document.getElementById('updateRole').value = role;
     }
 
-    // 5️⃣ View Shortlist
-    async function viewShortlist() {
-      const repId = document.getElementById('viewRepId').value;
-      const res = await fetch(`/api/csr_rep/view_shortlist/${repId}`);
-      const data = await res.json();
-      const tbody = document.querySelector('#viewShortlistTable tbody');
-      tbody.innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.title || ''}</td></tr>`).join('');
+    async function quickDelete(id) {
+      if (!confirm('Delete user ID ' + id + '?')) return;
+      
+      try {
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User deleted successfully!');
+        loadMyShortlist();
+      } catch (e) {
+        alert(e.message);
+      }
     }
 
-    // 6️⃣ Search Past Matches
-    async function searchPastMatches() {
-      const service = document.getElementById('service').value;
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      const res = await fetch(`/api/csr_rep/search_past_matches?service=${service}&start_date=${start}&end_date=${end}`);
-      const data = await res.json();
-      const tbody = document.querySelector('#pastMatchesTable tbody');
-      tbody.innerHTML = data.map(m => `<tr><td>${m.id}</td><td>${m.service || ''}</td><td>${m.date || ''}</td></tr>`).join('');
+    // Create new user profile
+    async function submitProfileCreate() {
+      const username = document.getElementById('createProfileUsername').value.trim();
+      const full_name = document.getElementById('createProfileFullName').value.trim();
+      const email = document.getElementById('createProfileEmail').value.trim();
+
+      if (!username || !full_name) {
+        alert('Username and full name are required');
+        return;
+      }
+
+      try {
+        await callApi(api.profileCreate, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, full_name, email })
+        });
+        alert('Profile created successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
     }
 
-    // 7️⃣ View Past Matches
-    async function viewPastMatches() {
-      const service = document.getElementById('viewService').value;
-      const start = document.getElementById('viewStart').value;
-      const end = document.getElementById('viewEnd').value;
-      const res = await fetch(`/api/csr_rep/view_past_matches?service=${service}&start_date=${start}&end_date=${end}`);
-      const data = await res.json();
-      const tbody = document.querySelector('#viewPastTable tbody');
-      tbody.innerHTML = data.map(m => `<tr><td>${m.id}</td><td>${m.service || ''}</td><td>${m.date || ''}</td></tr>`).join('');
+    // Active Request CRUD
+    async function submitProfileUpdate() {
+      const id = document.getElementById('profileUpdateId').value.trim();
+      const fullName = document.getElementById('profileFullName').value.trim();
+      const email = document.getElementById('profileEmail').value.trim();
+
+      if (!id) {
+        alert('Please enter a user ID');
+        return;
+      }
+
+      try {
+        await callApi(api.profileUpdate, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, full_name: fullName, email })
+        });
+        alert('Profile updated successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
     }
 
-    function logout() {
-      // Just redirect to logout URL
-      window.location.href = '/logout';
+    // Delete user profile
+    async function submitProfileDelete() {
+      const id = document.getElementById('deleteProfileId').value.trim();
+
+      if (!id) {
+        alert('Please enter a user profile ID');
+        return;
+      }
+
+      if (!confirm('Delete user profile ID ' + id + '?')) return;
+
+      try {
+        await callApi(api.profileDelete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('Profile deleted successfully!');
+        cancelProfileAction();
+      } catch (e) {
+        alert(e.message);
+      }
     }
 
+    async function quickProfileDelete(id) {
+      if (!confirm('Delete user ID ' + id + '?')) return;
+      
+      try {
+        await callApi(api.delete, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        alert('User Profile deleted successfully!');
+        loadActiveRequest();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
 
+    async function loadActiveRequest() {
+      try {
+        const data = await callApi("/api/requests/active?search=" + search, { method: 'GET' });
+        requests = data || [];
+        renderActiveRequests(requests);
+        document.getElementById('profileFilterSearch').value = '';
+      } catch (e) {
+        alert(e.message);
+        renderActiveRequests([]);
+      }
+    }
+
+    function applyProfileFilters() {
+      const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
+
+      let filtered = allProfiles;
+
+      if (searchTerm) {
+        filtered = filtered.filter(u => 
+          String(u.id).includes(searchTerm) || 
+          (u.username && u.username.toLowerCase().includes(searchTerm)) ||
+          (u.full_name && u.full_name.toLowerCase().includes(searchTerm)) ||
+          (u.email && u.email.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      renderActiveRequests(filtered);
+    }
+
+    function renderActiveRequests(data) {
+      const tbody = document.getElementById('profileTableBody');
+      tbody.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No profiles found</td></tr>';
+        return;
+      }
+
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.request_id)}</td>
+          <td>${escapeHtml(row.title)}</td>
+          <td>${escapeHtml(row.description)}</td>
+          <td>${escapeHtml(row.location)}</td>
+          <td>${escapeHtml(row.notes)}</td>
+          <td>${escapeHtml(row.status)}</td>
+          <td class="table-actions">
+            <button class="btn danger" onclick="quickDelete(${row.request_id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editProfile(id, fullName, email) {
+      closeProfilesModal();
+      document.getElementById('sectionSelect').value = 'profiles';
+      document.getElementById('shortlistSelection').classList.remove('active');
+      document.getElementById('activeRequestSection').classList.add('active');
+      document.getElementById('profileActionSelect').value = 'updateProfile';
+      document.getElementById('updateProfileForm').classList.add('active');
+      document.getElementById('profileUpdateId').value = id;
+      document.getElementById('profileFullName').value = fullName;
+      document.getElementById('profileEmail').value = email;
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function escapeJs(s) {
+      return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    window.cancelAction = cancelAction;
+    window.submitCreate = submitCreate;
+    window.submitUpdate = submitUpdate;
+    window.submitDelete = submitDelete;
+    window.closeModal = closeModal;
+    window.loadMyShortlist = loadMyShortlist;
+    window.applyFilters = applyFilters;
+    window.editUser = editUser;
+    window.quickDelete = quickDelete;
+    window.cancelProfileAction = cancelProfileAction;
+    window.submitProfileCreate = submitProfileCreate;
+    window.submitProfileDelete = submitProfileDelete;
+    window.submitProfileUpdate = submitProfileUpdate;
+    window.closeProfilesModal = closeProfilesModal;
+    window.loadActiveRequest = loadActiveRequest;
+    window.applyProfileFilters = applyProfileFilters;
+    window.editProfile = editProfile;
+    window.quickProfileDelete = quickProfileDelete;
   </script>
 </body>
 </html>
