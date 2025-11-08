@@ -57,158 +57,174 @@ class UserRepository:
     ###### USER ACCOUNTS ######
     ###########################
 
-    def create_user(self, username: str, password: str, role: str, full_name: str) -> UserProfile:
-        cur = self.db.cursor()
+    def create_user(self, username, password, role):
+        """Insert new user into DB."""
         try:
-            cur.execute(
-                "INSERT INTO user (username, password, role, full_name) VALUES (%s, %s, %s, %s)",
-                (username, password, role, full_name),
-            )
+            cursor = self.db.cursor(dictionary=True)
+            sql = """
+                INSERT INTO user (username, password, role, full_name)
+                VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (username, password, role, username))
             self.db.commit()
-            new_id = cur.lastrowid
-        finally:
-            cur.close()
 
-        return UserProfile(id=new_id, username=username, full_name=full_name, role=role)
+            user_id = cursor.lastrowid
+            cursor.close()
 
-    def list_users(self) -> List[UserProfile]:
-        cur = self.db.cursor(dictionary=True, buffered=True)
+            return {
+                "id": user_id,
+                "username": username,
+                "role": role,
+                "full_name": username,
+            }
+        except Exception as e:
+            raise Exception(f"Error creating user: {e}")
+
+    def list_users(self):
+        """Retrieve all users."""
         try:
-            cur.execute("SELECT user_id AS id, username, role FROM user")
-            rows = cur.fetchall()
-        finally:
-            cur.close()
+            cursor = self.db.cursor(dictionary=True)
+            cursor.execute("SELECT user_id AS id, username, role, full_name FROM user")
+            users = cursor.fetchall()
+            cursor.close()
+            return users
+        except Exception as e:
+            raise Exception(f"Error reading users: {e}")
 
-        return [UserProfile(id=row["id"], username=row["username"], role=row["role"]) for row in rows]
-
-    def update_user(self, user_id: int, username: str, role: str, password: Optional[str] = None) -> None:
-        cur = self.db.cursor()
+    def update_user(self, user_id, username, role, password=None):
+        """Update an existing user."""
         try:
+            cursor = self.db.cursor()
             if password:
-                cur.execute(
-                    "UPDATE user SET username = %s, password = %s, role = %s WHERE user_id = %s",
-                    (username, password, role, user_id),
-                )
-            else:
-                cur.execute(
-                    "UPDATE user SET username = %s, role = %s WHERE user_id = %s",
-                    (username, role, user_id),
-                )
-            self.db.commit()
-        finally:
-            cur.close()
-
-    def delete_user(self, user_id: int) -> Dict[str, Any]:
-        cur = self.db.cursor()
-        try:
-            cur.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
-            self.db.commit()
-        finally:
-            cur.close()
-
-        return {"success": True, "deleted_user_id": user_id}
-
-    def search_users(self, keyword: str) -> List[UserProfile]:
-        cur = self.db.cursor(dictionary=True, buffered=True)
-        try:
-            search_term = f"%{keyword.lower()}%"
-            cur.execute(
+                sql = """
+                    UPDATE user SET username = %s, password = %s, role = %s
+                    WHERE user_id = %s
                 """
-                SELECT user_id AS id, username, role
-                FROM user
-                WHERE LOWER(username) LIKE %s
-                   OR LOWER(role) LIKE %s
-                """,
-                (search_term, search_term),
-            )
-            rows = cur.fetchall()
-        finally:
-            cur.close()
+                cursor.execute(sql, (username, password, role, user_id))
+            else:
+                sql = """
+                    UPDATE user SET username = %s, role = %s
+                    WHERE user_id = %s
+                """
+                cursor.execute(sql, (username, role, user_id))
+            self.db.commit()
+            cursor.close()
+            return {"success": True, "updated_user_id": user_id}
+        except Exception as e:
+            raise Exception(f"Error updating user: {e}")
 
-        return [UserProfile(id=row["id"], username=row["username"], role=row["role"]) for row in rows]
+    def delete_user(self, user_id):
+        """Delete a user."""
+        try:
+            cursor = self.db.cursor()
+            cursor.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
+            self.db.commit()
+            cursor.close()
+            return {"success": True, "deleted_user_id": user_id}
+        except Exception as e:
+            raise Exception(f"Error deleting user: {e}")
+
+    def search_users(self, keyword):
+        """Search for users by username or role."""
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            sql = """
+                SELECT user_id AS id, username, role, full_name
+                FROM user
+                WHERE username LIKE %s OR role LIKE %s
+            """
+            cursor.execute(sql, (f"%{keyword}%", f"%{keyword}%"))
+            results = cursor.fetchall()
+            cursor.close()
+            return results
+        except Exception as e:
+            raise Exception(f"Error searching users: {e}")
 
     ###########################
     ###### USER PROFILES ######
     ###########################
 
-    def create_profile(self, username: str, full_name: str, email: str) -> UserProfile:
-        cur = self.db.cursor()
+    def create_profile(self, username, full_name, email, password):
+        """Create a new user profile linked to a user account."""
         try:
-            cur.execute(
-                "INSERT INTO user (username, full_name, email) VALUES (%s, %s, %s)",
-                (username, full_name, email),
-            )
+            cursor = self.db.cursor(dictionary=True)
+            sql = """
+                INSERT INTO user (username, full_name, email, password)
+                VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (username, full_name, email, password))
             self.db.commit()
-            new_id = cur.lastrowid
-        finally:
-            cur.close()
+            profile_id = cursor.lastrowid
+            cursor.close()
+            return {
+                "profile_id": profile_id,
+                "username": username,
+                "full_name": full_name,
+                "email": email,
+            }
+        except Exception as e:
+            raise Exception(f"Error creating profile: {e}")
 
-        return UserProfile(id=new_id, username=username, full_name=full_name, email=email)
-
-    def list_profiles(self) -> List[UserProfile]:
-        cur = self.db.cursor(dictionary=True, buffered=True)
+    def list_profiles(self):
+        """Retrieve all user profiles, joined with user accounts."""
         try:
-            cur.execute("SELECT user_id AS id, username, full_name, email FROM user")
-            rows = cur.fetchall()
-        finally:
-            cur.close()
-
-        profiles = [
-            UserProfile(
-                id=row["id"],
-                username=row["username"],
-                full_name=row["full_name"],
-                email=row["email"],
-            )
-            for row in rows
-        ]
-        return profiles
-
-    def update_profile(self, user_id: int, full_name: str, email: Optional[str]) -> None:
-        cur = self.db.cursor()
-        try:
-            cur.execute(
-                "UPDATE user SET full_name = %s, email = %s WHERE user_id = %s",
-                (full_name, email, user_id),
-            )
-            self.db.commit()
-        finally:
-            cur.close()
-
-    def delete_profile(self, user_id: int) -> Dict[str, Any]:
-        cur = self.db.cursor()
-        try:
-            cur.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
-            self.db.commit()
-        finally:
-            cur.close()
-
-        return {"success": True, "deleted_user_id": user_id}
-
-    def search_profiles(self, keyword: str) -> List[UserProfile]:
-        cur = self.db.cursor(dictionary=True, buffered=True)
-        try:
-            search_term = f"%{keyword.lower()}%"
-            cur.execute(
-                """
-                SELECT user_id AS id, username, full_name, email
+            cursor = self.db.cursor(dictionary=True)
+            sql = """
+                SELECT user_id AS id, username, role,
+                       full_name, email, created_at
                 FROM user
-                WHERE LOWER(username) LIKE %s
-                   OR LOWER(full_name) LIKE %s
-                   OR LOWER(email) LIKE %s
-                """,
-                (search_term, search_term, search_term),
-            )
-            rows = cur.fetchall()
-        finally:
-            cur.close()
+            """
+            cursor.execute(sql)
+            profiles = cursor.fetchall()
+            cursor.close()
+            return profiles
+        except Exception as e:
+            raise Exception(f"Error reading profiles: {e}")
 
-        return [
-            UserProfile(
-                id=row["id"],
-                username=row["username"],
-                full_name=row["full_name"],
-                email=row["email"],
-            )
-            for row in rows
-        ]
+    def update_profile(self, profile_id, full_name, email):
+        """Update user profile details."""
+        try:
+            cursor = self.db.cursor()
+            sql = """
+                UPDATE user
+                SET full_name = %s, email = %s
+                WHERE user_Id = %s
+            """
+            cursor.execute(sql, (full_name, email, profile_id))
+            self.db.commit()
+            cursor.close()
+            return {"success": True, "updated_profile_id": profile_id}
+        except Exception as e:
+            raise Exception(f"Error updating profile: {e}")
+
+    def delete_profile(self, profile_id):
+        """Delete a user profile."""
+        try:
+            cursor = self.db.cursor()
+            cursor.execute("DELETE FROM user WHERE user_id = %s", (profile_id,))
+            self.db.commit()
+            cursor.close()
+            return {"success": True, "deleted_profile_id": profile_id}
+        except Exception as e:
+            raise Exception(f"Error deleting profile: {e}")
+        
+    def search_profiles(self, keyword):
+        """Search for profiles by username, full name, or email."""
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            sql = """
+                SELECT p.user_id AS id, u.username, u.role,
+                       p.full_name, p.email
+                FROM user p
+                WHERE p.username LIKE %s
+                   OR p.full_name LIKE %s
+                   OR p.email LIKE %s
+                   OR p.role LIKE %s
+            """
+            like = f"%{keyword}%"
+            cursor.execute(sql, (like, like, like, like))
+            results = cursor.fetchall()
+            cursor.close()
+            return results
+        except Exception as e:
+            raise Exception(f"Error searching profiles: {e}")
