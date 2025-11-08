@@ -26,6 +26,11 @@ flask --app app --debug run
 
 App link: http://127.0.0.1:5000
 
+# Populating database with test data
+```bash
+python.exe populateDatabase.py
+```
+
 # Additional info
 These are the current users populated in the database
 | **username**| **password**  | **role** 
