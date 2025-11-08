@@ -62,7 +62,7 @@
         <div>PIN User ID</div>
         <div id="pinIdDisplay" class="id-badge">—</div>
         <!-- keep a hidden input so existing JS works -->
-        <input id="pinId" type="hidden" value="3" />
+        <input id="pinId" type="hidden"/>
         <div class="note">This is your logged-in PIN id.</div>
       </div>
     </div>
@@ -413,7 +413,7 @@
       return;
     }
     try {
-      const res = await fetch('/api/pin/requests', {
+      const res = await fetch('/api/requests', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pin_user_id, title, description, location, category_id })
@@ -438,7 +438,7 @@
     const wrap = document.getElementById('vr_table_wrap');
     wrap.innerHTML = 'Loading...';
     try {
-      const url = new URL('/api/pin/requests', location.origin);
+      const url = new URL('/api/requests', location.origin);
       url.searchParams.set('pin_user_id', pin_user_id);
       if (status) url.searchParams.set('status', status);
       const res = await fetch(url);
@@ -467,7 +467,7 @@
       return;
     }
     try {
-      const res = await fetch('/api/pin/requests', {
+      const res = await fetch('/api/requests', {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -505,7 +505,7 @@
     }
     if (!confirm('Delete this request?')) return;
     try {
-      const res = await fetch('/api/pin/requests', {
+      const res = await fetch('/api/requests', {
         method: 'DELETE',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pin_user_id, request_id })
@@ -532,7 +532,7 @@
     const wrap = document.getElementById('sr_table_wrap');
     wrap.innerHTML = 'Searching...';
     try {
-      const url = new URL('/api/pin/requests/search', location.origin);
+      const url = new URL('/api/requests/search', location.origin);
       url.searchParams.set('pin_user_id', pin_user_id);
       if (keyword) url.searchParams.set('keyword', keyword);
       if (status) url.searchParams.set('status', status);
@@ -546,6 +546,33 @@
     } catch (e) {
       wrap.innerHTML = '<div class="muted">Error searching requests</div>';
     }
+  }
+
+  async function getUserId() {
+    try {
+      const url = new URL('/userId', location.origin);
+      const res = await fetch(url);
+      const rows = await res.json();
+      return rows
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error searching requests</div>';
+    }
+  }
+  async function initPinFromApi() {
+    const hidden = document.getElementById('pinId');
+    const display = document.getElementById('pinIdDisplay');
+    let value = '';
+    try {
+    const data = await getUserId(); // expects 3 or { pin_user_id: 3 }
+    value = typeof data === 'object' && data !== null
+    ? (data.pin_user_id ?? data.user_id ?? data.id ?? '')
+    : data;
+    } catch (e) {
+    // optional fallback: keep badge as em dash on failure
+    value = '';
+    }
+    hidden.value = value || '';
+    display.textContent = value || '—';
   }
 
   // ===== Past Matches =====
@@ -702,9 +729,9 @@
 
   // ===== Init =====
   document.addEventListener('DOMContentLoaded', async () => {
+    await initPinFromApi();
     await loadCategories();
     loadMyRequests();
-    // keep Undo button visibility in sync with any manual status selection
     const statusSel = document.getElementById('ud_status');
     if (statusSel) statusSel.addEventListener('change', showUndoButtonIfNeeded);
     showUndoButtonIfNeeded();
