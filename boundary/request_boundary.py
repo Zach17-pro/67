@@ -28,6 +28,11 @@ def _req_to_dict(r) -> Dict[str, Any]:
     except Exception:
         return r.__dict__  # fallback
 
+def to_int_or_none(x):
+    try:
+        return int(x)
+    except (TypeError, ValueError):
+        return None
 
 def _list_to_dicts(items) -> List[Dict[str, Any]]:
     return [_req_to_dict(i) for i in items]
@@ -102,10 +107,11 @@ def update_request():
         data = request.get_json(force=True) or {}
         if not data.get("pin_user_id") or not data.get("request_id"):
             return jsonify({"error": "pin_user_id and request_id are required"}), 400
-
+        print("CSr: ",data['csr_id'])
         updated = UpdatePinRequestController(req_repo(), match_repo()).update_request(
             pin_user_id=int(data["pin_user_id"]),
             request_id=int(data["request_id"]),
+            csr_user_id = to_int_or_none(data['csr_id']),
             title=data.get("title"),
             description=data.get("description"),
             location=data.get("location"),

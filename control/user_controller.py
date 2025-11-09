@@ -86,3 +86,8 @@ class UserAdminSearchUserProfileController(UserController):
     #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
     def search_profiles(self, keyword: str):
         return self.repo.search_profiles(keyword)
+    
+
+class UserViewCSRController(UserController):
+    def list_csr(self):
+        return self.repo.get_csr()

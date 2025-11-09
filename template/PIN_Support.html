@@ -172,7 +172,12 @@
           <!-- holds the current DB status of the selected row -->
           <input type="hidden" id="ud_current_status" value="">
         </div>
-        <div class="col-8 actions">
+        <div class="col-3">
+          <label>CSR Representative
+            <select id="ud_csr"></select>
+          </label>
+        </div>
+        <div class="col-4 actions">
           <button class="btn" onclick="updateRequest()">Save Changes</button>
           <button class="btn btn-secondary" id="undoBtn" style="display:none" onclick="undoCompleted()">Undo Completed</button>
           <button class="btn btn-danger" onclick="deleteRequest()">Delete</button>
@@ -389,6 +394,57 @@
     }
   }
 
+  async function loadCSRs() {
+    const fallbacks = {
+      ud_csr: '(no csr)',
+    };
+    const ids = Object.keys(fallbacks);
+
+    function putFallbacks() {
+      ids.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = fallbacks[id];
+        sel.appendChild(opt);
+        sel.disabled = false;
+      });
+    }
+
+    try {
+      const res = await fetch('/api/user/csr');
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const cats = await res.json(); // [{id, name}, ...]
+      ids.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        const first = document.createElement('option');
+        first.value = '';
+        first.textContent = fallbacks[id];
+        sel.appendChild(first);
+        if (Array.isArray(cats)) {
+          cats.forEach(c => {
+            console.log(c)
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.username;
+            sel.appendChild(opt);
+          });
+        }
+        sel.disabled = false;
+      });
+    } catch (err) {
+      console.error('CSR load error:', err);
+      putFallbacks();
+    }
+  }
+
+
+  
+
   // ===== Session (read-only) =====
   (function initPinFromQuery() {
     const params = new URLSearchParams(location.search);
@@ -460,12 +516,14 @@
     const description = document.getElementById('ud_desc').value.trim();
     const location = document.getElementById('ud_location').value.trim();
     const catVal = (document.getElementById('ud_category').value || '').trim();
+    const csrVal = (document.getElementById('ud_csr').value || '').trim();
     const category_id = catVal ? parseInt(catVal, 10) : null;
+    const csr_id = csrVal ? parseInt(csrVal, 10) : null;
     const status = document.getElementById('ud_status').value;
 
     const msg = document.getElementById('ud_msg');
     msg.textContent = '';
-
+    console.log(csr_id)
     if (!pin_user_id || !request_id) {
       msg.textContent = 'PIN User ID and Request ID are required.';
       return;
@@ -477,6 +535,7 @@
         body: JSON.stringify({
           pin_user_id,
           request_id,
+          csr_id: csr_id,
           title: title || undefined,
           description: description || undefined,
           location: location || undefined,
@@ -709,7 +768,7 @@
         <td>${m.service_date || ''}</td>
         <td>${m.completion_date || ''}</td>
         <td>${escapeHtml(m.status || '')}</td>
-        <td>${escapeHtml(m.category_name || (m.category_id ?? ''))}</td>
+        <td>${escapeHtml(m.category_name || 'No category selected')}</td>
         <td>${escapeHtml(m.location || '')}</td>
       </tr>
     `).join('');
@@ -754,6 +813,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     await initPinFromApi();
     await loadCategories();
+    await loadCSRs();
     loadMyRequests();
     const statusSel = document.getElementById('ud_status');
     if (statusSel) statusSel.addEventListener('change', showUndoButtonIfNeeded);

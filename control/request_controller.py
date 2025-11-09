@@ -85,6 +85,7 @@ class UpdatePinRequestController:
         *,
         pin_user_id: int,
         request_id: int,
+        csr_user_id: Optional[str],
         title: Optional[str] = None,
         description: Optional[str] = None,
         category_id: Optional[int] = None,
@@ -113,7 +114,7 @@ class UpdatePinRequestController:
             location=location.strip() if isinstance(location, str) else location,
             status=status,
         )  # [web:44][web:50]
-
+    
         # If the request was (or is now) Completed, ensure a Completed match row exists.
         # NOTE: We use pin_user_id as a placeholder csr_user_id if none is known.
         #       Replace with the actual CSR id when you have it in your flow.
@@ -122,7 +123,7 @@ class UpdatePinRequestController:
                 self.match_repo.ensure_completed_match(
                     request_id=request_id,
                     pin_user_id=pin_user_id,
-                    csr_user_id=pin_user_id,  # TODO: provide real CSR user id when available
+                    csr_user_id=csr_user_id,  # TODO: provide real CSR user id when available
                 )
             except Exception:
                 # Don't block the request update if match creation fails; surface via logs if desired.

@@ -123,16 +123,20 @@ class MatchRepository:
                 """,
                 (request_id, csr_user_id, pin_user_id, service_date, completion_date),
             )
+            
             new_id = cur3.lastrowid
             self.db.commit()
             return new_id
+        except Exception as e:
+            print("error:", e)
         finally:
             cur3.close()
 
     # --- list/view past matches (robust) ---
     def list_past_matches(
         self,
-        pin_user_id: int,
+        user_id: int,
+        user_type: str,
         *,
         category_id: Optional[int] = None,
         service_date_from: Optional[date] = None,
@@ -141,6 +145,7 @@ class MatchRepository:
         completion_to: Optional[datetime] = None,
         order_desc: bool = True,
     ) -> List[Match]:
+        
         """
         View past matches (status 'Completed' case-insensitive) with optional filters.
         Requires non-NULL completion_date to count as 'past'.
@@ -154,12 +159,14 @@ class MatchRepository:
             FROM `match` m
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
-            WHERE m.pin_user_id = %s
-            AND LOWER(TRIM(m.status)) = 'completed'
-            AND m.completion_date IS NOT NULL
+            WHERE m.
         """
-        params: List[Any] = [pin_user_id]
+        sql += user_type
 
+        sql += """ = %s AND LOWER(TRIM(m.status)) = 'completed'
+            AND m.completion_date IS NOT NULL"""
+        params: List[Any] = [user_id]
+        
         if category_id is not None:
             sql += " AND r.category_id = %s"
             params.append(category_id)
@@ -181,14 +188,17 @@ class MatchRepository:
             params.append(completion_to)
 
         sql += " ORDER BY m.completion_date " + ("DESC" if order_desc else "ASC")
-
+        
         cur = self.db.cursor(dictionary=True, buffered=True)
         try:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
+            print(rows)
             return [self._row_to_match(r) for r in rows]
         finally:
             cur.close()
+
+   
 
     # --- search past matches (robust) ---
     def search_past_matches(

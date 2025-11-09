@@ -65,7 +65,11 @@
 
       <!-- View Shortlist Section -->
       <div id="shortlistSelection" class="section active">
-        <div class="action-row">
+        <div class="filter-row">
+          <div>
+            <label for="">Search</label>
+            <input type="text" id="" oninput="loadMyShortlist()" placeholder="Search by title, description, notes" />
+          </div>
           <table>
             <thead>
               <tr>
@@ -83,77 +87,6 @@
         </div>
       </div>
 
-        <!-- Create Form -->
-        <div id="createForm" class="form-container">
-          <div class="form-fields">
-            <div>
-              <label for="createUsername">Username *</label>
-              <input type="text" id="createUsername" placeholder="Enter username" />
-            </div>
-            <div>
-              <label for="createPassword">Password *</label>
-              <input type="password" id="createPassword" placeholder="Enter password" />
-            </div>
-            <div>
-              <label for="createRole">Role *</label>
-              <select id="createRole">
-                <option>Admin</option>
-                <option>Csr_Rep</option>
-                <option>PIN_Support</option>
-                <option>Platform_Manager</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-            <button class="btn" onclick="submitCreate()">Create User</button>
-          </div>
-        </div>
-
-        <!-- Update Form -->
-        <div id="updateForm" class="form-container">
-          <div class="form-fields">
-            <div>
-              <label for="updateId">User ID *</label>
-              <input type="text" id="updateId" placeholder="Enter user ID" />
-            </div>
-            <div>
-              <label for="updateUsername">Username</label>
-              <input type="text" id="updateUsername" placeholder="New username" />
-            </div>
-            <div>
-              <label for="updatePassword">Password</label>
-              <input type="password" id="updatePassword" placeholder="New password (leave blank to keep current)" />
-            </div>
-            <div>
-              <label for="updateRole">Role</label>
-              <select id="updateRole">
-                <option>Admin</option>
-                <option>Csr_Rep</option>
-                <option>PIN_Support</option>
-                <option>Platform_Manager</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-            <button class="btn" onclick="submitUpdate()">Update User</button>
-          </div>
-        </div>
-
-        <!-- Delete Form -->
-        <div id="deleteForm" class="form-container">
-          <div class="form-fields">
-            <div>
-              <label for="deleteId">User ID *</label>
-              <input type="text" id="deleteId" placeholder="Enter user ID to delete" />
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-            <button class="btn danger" onclick="submitDelete()">Delete User</button>
-          </div>
-        </div>
 
       <!-- Active Request Section -->
       <div id="activeRequestSection" class="section">
@@ -183,10 +116,30 @@
       </div>
     <!-- end of div.card -->
     </div>
+    
+    <div id="pastMatchSection" class="section">
+        <div class="filter-row">
+          <div>
+            <label for="filterSearch">Search</label>
+            <input type="text" id="filterSearch" oninput="loadPastMatches()" placeholder="Search by title, description, notes" />
+          </div>
+        </div>
 
-
-    <!-- View Users Modal -->
-
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>title</th>
+              <th>location</th>
+              <th>status</th>
+              <th>action</th>
+            </tr>
+          </thead>
+          <tbody id="pastMatchesTableBody">
+            <tr><td colspan="4">Loading...</td></tr>
+          </tbody>
+        </table>
+    </div>
 
     <!-- View Request Modal -->
     <div id="viewRequestModal" class="modal">
@@ -212,6 +165,7 @@
 
       let allUsers = [];
       let allProfiles = [];
+      let allPastMatches = [];
 
       // Section switching
       document.getElementById('sectionSelect').addEventListener('change', function() {
@@ -222,8 +176,9 @@
         } else if (this.value === 'activeRequests') {
           document.getElementById('activeRequestSection').classList.add('active');
           loadActiveRequest()
-        } else if (this.value === 'pastMatch') {
+        } else if (this.value === 'pastMatches') {
           document.getElementById('pastMatchSection').classList.add('active');
+          loadPastMatches()
         }
 
         cancelAction();
@@ -234,7 +189,6 @@
         loadMyShortlist()
       })
 
-      // User Accounts functionality
       document.getElementById('actionSelect').addEventListener('change', function() {
         document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
         if (this.value) {
@@ -657,6 +611,22 @@
         }
       }
 
+      async function loadPastMatches() {
+        try {
+            const searchTerm = document.getElementById('filterSearch').value.trim() || '';
+            const userData = await getUserId(); 
+            const csrId = userData?.id ?? userData;
+            // Call API to get past matches (Completed requests)
+            const data3 = await callApi(`/api/pin/matches/past?csr_user_id=${csrId}&keyword=${encodeURIComponent(searchTerm)}`,{ method: 'GET' });
+            console.log(data3)
+            allPastMatches = data3 || [];
+            renderPastMatches(allPastMatches);
+        } catch (e) {
+            alert(e.message);
+            renderPastMatches([]);
+        }
+    }
+
       
 
       function resetActiveRequestFilters() {
@@ -761,6 +731,32 @@
           alert("Failed to add to shortlist: " + e.message);
         }
       }
+
+      function renderPastMatches(data) {
+        const tbody = document.getElementById('pastMatchesTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No past matches found</td></tr>';
+          return;
+        }
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(row.request_id)}</td>
+            <td>${escapeHtml(row.title)}</td>
+            <td>${escapeHtml(row.location)}</td>
+            <td>${escapeHtml(row.status)}</td>
+            <td class="table-actions">
+              <button class="btn" onclick="openRequestModal(${row.request_id})">View</button>
+              <button class="btn secondary" onclick="undoMatch(${row.match_id})">Undo</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          });
+        }
+
 
 
       window.cancelAction = cancelAction;

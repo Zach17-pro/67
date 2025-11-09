@@ -72,12 +72,23 @@ def _parse_dt(s: Optional[str]) -> Optional[datetime]:
 @match_api.get("/past")
 def view_past_matches():
     try:
-        pin_user_id = request.args.get("pin_user_id", type=int)
-        if not pin_user_id:
-            return jsonify({"error": "pin_user_id is required"}), 400
+        pin = request.args.get("pin_user_id", type=int)
+        csr = request.args.get("csr_user_id", type=int)
+
+        # determine which was supplied
+        provided = [(k, v) for k, v in (("pin_user_id", pin), ("csr_user_id", csr)) if v is not None]
+
+        if len(provided) == 0:
+            jsonify({'error':"Provide exactly one of pin_user_id or csr_user_id"}, 400) 
+        if len(provided) > 1:
+            jsonify({'error':"Provide only one of pin_user_id or csr_user_id"}, 400) 
+
+        attr, user_id = provided[0]
+
 
         items = controller().view_past_matches(
-            pin_user_id=pin_user_id,
+            user_id=user_id,
+            user_type=attr,
             category_id=request.args.get("category_id", type=int),
             service_date_from=request.args.get("service_date_from"),
             service_date_to=request.args.get("service_date_to"),
