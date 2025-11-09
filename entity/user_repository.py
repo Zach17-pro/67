@@ -90,6 +90,17 @@ class UserRepository:
             return users
         except Exception as e:
             raise Exception(f"Error reading users: {e}")
+        
+    def get_csr(self):
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            cursor.execute("SELECT user_id AS id, username, role, full_name FROM user WHERE role='Csr_Rep'")
+            users = cursor.fetchall()
+            cursor.close()
+            return users
+        except Exception as e:
+            raise Exception(f"Error reading users: {e}")
+        
 
     def update_user(self, user_id, username, role, password=None):
         """Update an existing user."""
