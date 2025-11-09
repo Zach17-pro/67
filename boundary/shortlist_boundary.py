@@ -34,16 +34,22 @@ def save_shortlist():
     Save PIN request to CSR's shortlist
     """
     try:
-        csr_id = request.args.get("csr_id", type=int)
+        data = request.get_json() or {}
+        csr_id = data.get("pin_user_id")  # <-- read from JSON body
         if not csr_id:
             return jsonify({"error": "pin_user_id is required"}), 400
-        data = request.get_json()
+
         request_id = data.get("request_id")
         notes = data.get("notes")
-        result = SaveShortlistController(shortRepo()).add_to_shortlist(csr_id=csr_id, request_id=request_id, notes=notes)
+        result = SaveShortlistController(shortRepo()).add_to_shortlist(
+            csr_id=csr_id,
+            request_id=request_id,
+            notes=notes
+        )
         return jsonify({"message": "Shortlist saved"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # @csr_shortlist_api.get("/search")
 # def search_shortlist():

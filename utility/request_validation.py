@@ -3,6 +3,7 @@ from datetime import datetime
 
 
 class RequestValidation:
+    ALLOWED_STATUSES = {"Open", "In Progress", "Completed", "Cancelled"}
     # ----------------------
     # Validation utilities
     # ----------------------
@@ -16,9 +17,10 @@ class RequestValidation:
         if value is None or not isinstance(value, int) or value <= 0:
             raise ValueError(f"{field} must be a positive integer")
 
-    def _require_status(self, status: str) -> None:
-        if status not in self.ALLOWED_STATUSES:
-            raise ValueError(f"status must be one of {sorted(self.ALLOWED_STATUSES)}")
+    @staticmethod
+    def _require_status(status: str) -> None:
+        if status not in RequestValidation.ALLOWED_STATUSES:
+            raise ValueError(f"status must be one of {sorted(RequestValidation.ALLOWED_STATUSES)}")
 
     @staticmethod
     def _parse_dt(v: datetime | str) -> datetime:

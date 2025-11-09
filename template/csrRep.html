@@ -51,25 +51,32 @@
         <select id="sectionSelect" style="width: auto; padding: 6px 10px;">
           <option value="shortlist">My Shortlist</option>
           <option value="activeRequests">Active Request</option>
+          <option value="pastMatches">Past Matches</option>
         </select>
       </div>
       <a href="/logout" class="logout-btn">🚪 Logout</a>
     </div>
 
-    <!-- User Accounts Section -->
+    <!-- View Shortlist Section -->
     <div id="shortlistSelection" class="section active">
       <div class="action-row">
-        <div>
-          <label for="actionSelect">Select Action</label>
-          <select id="actionSelect">
-            <option value="">-- Choose an action --</option>
-            <option value="create">Create User</option>
-            <option value="update">Update User</option>
-            <option value="delete">Delete User</option>
-          </select>
-        </div>
-        <button class="btn view" id="viewBtn">View Shortlists</button>
       </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>title</th>
+            <th>description</th>
+            <th>location</th>
+            <th>status</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
 
       <!-- Create Form -->
       <div id="createForm" class="form-container">
@@ -150,10 +157,9 @@
       <div class="filter-row">
         <div>
           <label for="filterSearch">Search</label>
-          <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
+          <input type="text" id="filterSearch" oninput="loadActiveRequest()" placeholder="Search by title, description, notes" />
         </div>
-        <button class="btn" onclick="applyFilters()">Apply</button>
-        <button class="btn secondary" onclick="loadActiveRequest()">Reset</button>
+        <button class="btn secondary" onclick="resetActiveRequestFilters()">Reset</button>
       </div>
 
       <table>
@@ -186,8 +192,7 @@
           <label for="filterSearch">Search</label>
           <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
         </div>
-        <button class="btn" onclick="applyFilters()">Apply</button>
-        <button class="btn secondary" onclick="loadMyShortlist()">Reset</button>
+        <button class="btn" onclick="loadMyShortlist()">Apply</button>
       </div>
 
       <table>
@@ -211,6 +216,9 @@
   <!-- View Profiles Modal -->
 
   <script>
+    const api = {
+      delete: '/api/shortlist'
+    };
 
     let allUsers = [];
     let allProfiles = [];
@@ -220,10 +228,14 @@
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       if (this.value === 'shortlist') {
         document.getElementById('shortlistSelection').classList.add('active');
+        loadMyShortlist()
       } else if (this.value === 'activeRequests') {
         document.getElementById('activeRequestSection').classList.add('active');
         loadActiveRequest()
+      } else if (this.value === 'pastMatch') {
+        document.getElementById('pastMatchSection').classList.add('active');
       }
+
       cancelAction();
       cancelProfileAction();
     });
@@ -269,6 +281,7 @@
         document.getElementById(this.value + 'Form').classList.add('active');
       }
     });
+
 
     function cancelProfileAction() {
       document.getElementById('profileActionSelect').value = '';
@@ -390,11 +403,12 @@
 
     async function loadMyShortlist() {
       try {
+        const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase() || '';
         const data = await getUserId(); 
         value = typeof data === 'object' && data !== null
         ? (data.id ?? '')
         : data;
-        const data2 = await callApi(`/api/shortlist?csr_id=${value}`, { method: 'GET' });
+        const data2 = await callApi(`/api/shortlist?csr_id=${value}&search=${searchTerm}`, { method: 'GET' });
         allUsers = data2 || [];
         renderShortlist(allUsers);
         document.getElementById('filterSearch').value = '';
@@ -406,16 +420,8 @@
 
     function applyFilters() {
       const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase();
-      
+      loadMyShortlist(searchTerm)
       let filtered = allUsers;
-      if (searchTerm) {
-        filtered = filtered.filter(u => 
-          String(u.id).includes(searchTerm) || 
-          u.title.toLowerCase().includes(searchTerm) || 
-          u.description.toLowerCase().includes(searchTerm) || 
-          u.notes.toLowerCase().includes(searchTerm)
-        );
-      }
 
       renderShortlist(filtered);
     }
@@ -460,7 +466,7 @@
     }
 
     async function quickDelete(id) {
-      if (!confirm('Delete user ID ' + id + '?')) return;
+      if (!confirm('Delete Request ID ' + id + '?')) return;
       
       try {
         await callApi(api.delete, {
@@ -468,7 +474,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id })
         });
-        alert('User deleted successfully!');
+        alert('Request deleted successfully!');
         loadMyShortlist();
       } catch (e) {
         alert(e.message);
@@ -565,15 +571,26 @@
 
     async function loadActiveRequest() {
       try {
-        const data = await callApi("/api/requests/active?search=" + search, { method: 'GET' });
-        requests = data || [];
-        renderActiveRequests(requests);
-        document.getElementById('profileFilterSearch').value = '';
+        const search = document.getElementById('filterSearch').value.trim() || '';
+        const data = await callApi(`/api/requests/active?search=${encodeURIComponent(search)}`, { method: 'GET' });
+        allProfiles = data || [];
+        renderActiveRequests(allProfiles);
       } catch (e) {
         alert(e.message);
         renderActiveRequests([]);
       }
     }
+
+    function resetActiveRequestFilters() {
+      // Clear the search field
+      const searchInput = document.getElementById('filterSearch');
+      if (searchInput) searchInput.value = '';
+
+      // Reload the active request table
+      loadActiveRequest();
+    }
+
+
 
     function applyProfileFilters() {
       const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
@@ -611,7 +628,7 @@
           <td>${escapeHtml(row.notes)}</td>
           <td>${escapeHtml(row.status)}</td>
           <td class="table-actions">
-            <button class="btn danger" onclick="quickDelete(${row.request_id})">Delete</button>
+            <button class="btn view" onclick="saveToShortlist(${row.request_id})">Shortlist</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -640,6 +657,30 @@
       return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
     }
 
+    async function saveToShortlist(requestId) {
+      try {
+        // Fetch CSR ID
+        const csrData = await getUserId(); // your existing function
+        const csrId = csrData?.id;
+        if (!csrId) {
+          alert("Failed to get CSR ID");
+          return;
+        }
+
+        // Call API
+        await callApi(`/api/shortlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
+        });
+
+        alert("Added to shortlist!");
+      } catch (e) {
+        alert("Failed to add to shortlist: " + e.message);
+      }
+    }
+
+
     window.cancelAction = cancelAction;
     window.submitCreate = submitCreate;
     window.submitUpdate = submitUpdate;
@@ -658,6 +699,7 @@
     window.applyProfileFilters = applyProfileFilters;
     window.editProfile = editProfile;
     window.quickProfileDelete = quickProfileDelete;
+    window.saveToShortlist = saveToShortlist;
   </script>
 </body>
 </html>
