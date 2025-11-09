@@ -1,140 +1,139 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SixSeven — Admin</title>
-  <style>
-      body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; }
-      .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); width: 720px; max-width: 95%; position: relative; }
-      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-      .header-left { display: flex; gap: 12px; align-items: center; }
-      .header h2 { margin: 0; font-size: 20px; }
-      .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; }
-      .action-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
-      .action-row > div { flex: 1; }
-      label { display: block; margin-bottom: 4px; font-size: 13px; }
-      select, input[type="text"], input[type="password"], input[type="email"] { width: 100%; padding: 8px 10px; border: 1px solid #ccd6e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-      .btn { padding: 8px 16px; background: #2b78e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; }
-      .btn.secondary { background: #6b7280; }
-      .btn.danger { background: #b00020; }
-      .btn.view { background: #28a745; }
-      .form-container { background: #f8f9fa; padding: 16px; border-radius: 6px; margin-bottom: 16px; display: none; }
-      .form-container.active { display: block; }
-      .form-fields { display: flex; gap: 12px; margin-bottom: 12px; }
-      .form-fields > div { flex: 1; }
-      .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
-      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-      .modal.active { display: flex; align-items: center; justify-content: center; }
-      .modal-content { background: white; border-radius: 8px; padding: 24px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; }
-      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-      .modal-header h3 { margin: 0; font-size: 18px; }
-      .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; }
-      .filter-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
-      .filter-row > div:first-child { flex: 2; }
-      .filter-row > div:nth-child(2) { flex: 1; }
-      table { width: 100%; border-collapse: collapse; font-size: 14px; }
-      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
-      th { background: #f8f9fa; }
-      .table-actions { display: flex; gap: 6px; }
-      .table-actions .btn { padding: 6px 12px; font-size: 13px; }
-      .hint { color: #666; font-size: 12px; margin-top: 16px; }
-      .section { display: none; }
-      .section.active { display: block; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <div class="header-left">
-        <h2>CSR Panel</h2>
-        <select id="sectionSelect" style="width: auto; padding: 6px 10px;">
-          <option value="shortlist">My Shortlist</option>
-          <option value="activeRequests">Active Request</option>
-          <option value="pastMatches">Past Matches</option>
-        </select>
-      </div>
-      <a href="/logout" class="logout-btn">🚪 Logout</a>
-    </div>
-
-    <!-- View Shortlist Section -->
-    <div id="shortlistSelection" class="section active">
-      <div class="action-row">
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>title</th>
-            <th>description</th>
-            <th>location</th>
-            <th>status</th>
-          </tr>
-        </thead>
-        <tbody id="userTableBody">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-      <!-- Create Form -->
-      <div id="createForm" class="form-container">
-        <div class="form-fields">
-          <div>
-            <label for="createUsername">Username *</label>
-            <input type="text" id="createUsername" placeholder="Enter username" />
-          </div>
-          <div>
-            <label for="createPassword">Password *</label>
-            <input type="password" id="createPassword" placeholder="Enter password" />
-          </div>
-          <div>
-            <label for="createRole">Role *</label>
-            <select id="createRole">
-              <option>Admin</option>
-              <option>Csr_Rep</option>
-              <option>PIN_Support</option>
-              <option>Platform_Manager</option>
-            </select>
-          </div>
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SixSeven — Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; }
+        .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); width: 720px; max-width: 95%; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-left { display: flex; gap: 12px; align-items: center; }
+        .header h2 { margin: 0; font-size: 20px; }
+        .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; }
+        .action-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+        .action-row > div { flex: 1; }
+        label { display: block; margin-bottom: 4px; font-size: 13px; }
+        select, input[type="text"], input[type="password"], input[type="email"] { width: 100%; padding: 8px 10px; border: 1px solid #ccd6e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .btn { padding: 8px 16px; background: #2b78e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn.secondary { background: #6b7280; }
+        .btn.danger { background: #b00020; }
+        .btn.view { background: #28a745; }
+        .form-container { background: #f8f9fa; padding: 16px; border-radius: 6px; margin-bottom: 16px; display: none; }
+        .form-container.active { display: block; }
+        .form-fields { display: flex; gap: 12px; margin-bottom: 12px; }
+        .form-fields > div { flex: 1; }
+        .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 8px; padding: 24px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; }
+        .filter-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+        .filter-row > div:first-child { flex: 2; }
+        .filter-row > div:nth-child(2) { flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; }
+        .table-actions { display: flex; gap: 6px; }
+        .table-actions .btn { padding: 6px 12px; font-size: 13px; }
+        .hint { color: #666; font-size: 12px; margin-top: 16px; }
+        .section { display: none; }
+        .section.active { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="header">
+        <div class="header-left">
+          <h2>CSR Panel</h2>
+          <select id="sectionSelect" style="width: auto; padding: 6px 10px;">
+            <option value="shortlist">My Shortlist</option>
+            <option value="activeRequests">Active Request</option>
+            <option value="pastMatches">Past Matches</option>
+          </select>
         </div>
-        <div class="form-actions">
-          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-          <button class="btn" onclick="submitCreate()">Create User</button>
+        <a href="/logout" class="logout-btn">🚪 Logout</a>
+      </div>
+
+      <!-- View Shortlist Section -->
+      <div id="shortlistSelection" class="section active">
+        <div class="action-row">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>title</th>
+                <th>description</th>
+                <th>location</th>
+                <th>status</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Update Form -->
-      <div id="updateForm" class="form-container">
-        <div class="form-fields">
-          <div>
-            <label for="updateId">User ID *</label>
-            <input type="text" id="updateId" placeholder="Enter user ID" />
+        <!-- Create Form -->
+        <div id="createForm" class="form-container">
+          <div class="form-fields">
+            <div>
+              <label for="createUsername">Username *</label>
+              <input type="text" id="createUsername" placeholder="Enter username" />
+            </div>
+            <div>
+              <label for="createPassword">Password *</label>
+              <input type="password" id="createPassword" placeholder="Enter password" />
+            </div>
+            <div>
+              <label for="createRole">Role *</label>
+              <select id="createRole">
+                <option>Admin</option>
+                <option>Csr_Rep</option>
+                <option>PIN_Support</option>
+                <option>Platform_Manager</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label for="updateUsername">Username</label>
-            <input type="text" id="updateUsername" placeholder="New username" />
-          </div>
-          <div>
-            <label for="updatePassword">Password</label>
-            <input type="password" id="updatePassword" placeholder="New password (leave blank to keep current)" />
-          </div>
-          <div>
-            <label for="updateRole">Role</label>
-            <select id="updateRole">
-              <option>Admin</option>
-              <option>Csr_Rep</option>
-              <option>PIN_Support</option>
-              <option>Platform_Manager</option>
-            </select>
+          <div class="form-actions">
+            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+            <button class="btn" onclick="submitCreate()">Create User</button>
           </div>
         </div>
-        <div class="form-actions">
-          <button class="btn secondary" onclick="cancelAction()">Cancel</button>
-          <button class="btn" onclick="submitUpdate()">Update User</button>
+
+        <!-- Update Form -->
+        <div id="updateForm" class="form-container">
+          <div class="form-fields">
+            <div>
+              <label for="updateId">User ID *</label>
+              <input type="text" id="updateId" placeholder="Enter user ID" />
+            </div>
+            <div>
+              <label for="updateUsername">Username</label>
+              <input type="text" id="updateUsername" placeholder="New username" />
+            </div>
+            <div>
+              <label for="updatePassword">Password</label>
+              <input type="password" id="updatePassword" placeholder="New password (leave blank to keep current)" />
+            </div>
+            <div>
+              <label for="updateRole">Role</label>
+              <select id="updateRole">
+                <option>Admin</option>
+                <option>Csr_Rep</option>
+                <option>PIN_Support</option>
+                <option>Platform_Manager</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn secondary" onclick="cancelAction()">Cancel</button>
+            <button class="btn" onclick="submitUpdate()">Update User</button>
+          </div>
         </div>
-      </div>
 
         <!-- Delete Form -->
         <div id="deleteForm" class="form-container">
@@ -149,557 +148,558 @@
             <button class="btn danger" onclick="submitDelete()">Delete User</button>
           </div>
         </div>
-      </div>
 
-    <!-- Active Request Section -->
-    <div id="activeRequestSection" class="section">
-      
-      <div class="filter-row">
-        <div>
-          <label for="filterSearch">Search</label>
-          <input type="text" id="filterSearch" oninput="loadActiveRequest()" placeholder="Search by title, description, notes" />
+      <!-- Active Request Section -->
+      <div id="activeRequestSection" class="section">
+        
+        <div class="filter-row">
+          <div>
+            <label for="filterSearch">Search</label>
+            <input type="text" id="filterSearch" oninput="loadActiveRequest()" placeholder="Search by title, description, notes" />
+          </div>
+          <button class="btn secondary" onclick="resetActiveRequestFilters()">Reset</button>
         </div>
-        <button class="btn secondary" onclick="resetActiveRequestFilters()">Reset</button>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>title</th>
+              <th>description</th>
+              <th>location</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody id="profileTableBody">
+            <tr><td colspan="4">Loading...</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>title</th>
-            <th>description</th>
-            <th>location</th>
-            <th>status</th>
-          </tr>
-        </thead>
-        <tbody id="profileTableBody">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
-  </div>
-
-
-  <!-- View Users Modal -->
-  <div id="viewModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>My Shortlist</h3>
-        <button class="close-btn" onclick="closeModal()">&times;</button>
-      </div>
-      
-      <div class="filter-row">
-        <div>
-          <label for="filterSearch">Search</label>
-          <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
-        </div>
-        <button class="btn" onclick="loadMyShortlist()">Apply</button>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>title</th>
-            <th>description</th>
-            <th>location</th>
-            <th>notes</th>
-            <th>status</th>
-          </tr>
-        </thead>
-        <tbody id="userTableBody">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
+    <!-- end of div.card -->
     </div>
-  </div>
-
-  <!-- View Profiles Modal -->
-
-  <script>
-    const api = {
-      delete: '/api/shortlist'
-    };
-
-    let allUsers = [];
-    let allProfiles = [];
-
-    // Section switching
-    document.getElementById('sectionSelect').addEventListener('change', function() {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      if (this.value === 'shortlist') {
-        document.getElementById('shortlistSelection').classList.add('active');
-        loadMyShortlist()
-      } else if (this.value === 'activeRequests') {
-        document.getElementById('activeRequestSection').classList.add('active');
-        loadActiveRequest()
-      } else if (this.value === 'pastMatch') {
-        document.getElementById('pastMatchSection').classList.add('active');
-      }
-
-      cancelAction();
-      cancelProfileAction();
-    });
-
-    // User Accounts functionality
-    document.getElementById('actionSelect').addEventListener('change', function() {
-      document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
-      if (this.value) {
-        document.getElementById(this.value + 'Form').classList.add('active');
-      }
-    });
-
-    function cancelAction() {
-      document.getElementById('actionSelect').value = '';
-      document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
-      document.getElementById('createUsername').value = '';
-      document.getElementById('createPassword').value = '';
-      document.getElementById('updateId').value = '';
-      document.getElementById('updateUsername').value = '';
-      document.getElementById('updatePassword').value = '';
-      document.getElementById('deleteId').value = '';
-    }
-
-    document.getElementById('viewBtn').addEventListener('click', function() {
-      document.getElementById('viewModal').classList.add('active');
-      loadMyShortlist();
-    });
-
-    function closeModal() {
-      document.getElementById('viewModal').classList.remove('active');
-    }
-
-    document.getElementById('viewModal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-
-    
-
-    // Active Request functionality
-    document.getElementById('profileActionSelect').addEventListener('change', function() {
-      document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
-      if (this.value) {
-        document.getElementById(this.value + 'Form').classList.add('active');
-      }
-    });
 
 
-    function cancelProfileAction() {
-      document.getElementById('profileActionSelect').value = '';
-      document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
-      document.getElementById('profileUpdateId').value = '';
-      document.getElementById('profileFullName').value = '';
-      document.getElementById('profileEmail').value = '';
+    <!-- View Users Modal -->
+    <div id="viewModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>My Shortlist</h3>
+          <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        
+        <div class="filter-row">
+          <div>
+            <label for="filterSearch">Search</label>
+            <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
+          </div>
+          <button class="btn" onclick="loadMyShortlist()">Apply</button>
+        </div>
 
-      document.getElementById('createProfileUsername').value = '';
-      document.getElementById('createProfileFullName').value = '';
-      document.getElementById('createProfileEmail').value = '';
-      document.getElementById('deleteProfileId').value = '';
-    }
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>title</th>
+              <th>description</th>
+              <th>location</th>
+              <th>notes</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr><td colspan="4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
+    <!-- View Profiles Modal -->
 
+    <script>
+      const api = {
+        delete: '/api/shortlist'
+      };
 
-    function closeProfilesModal() {
-      document.getElementById('viewProfilesModal').classList.remove('active');
-    }
+      let allUsers = [];
+      let allProfiles = [];
 
-    document.getElementById('viewProfilesModal').addEventListener('click', function(e) {
-      if (e.target === this) closeProfilesModal();
-    });
-
-    async function callApi(path, opts) {
-      try {
-        const res = await fetch(path, opts);
-        if (!res.ok) {
-          const text = await res.text().catch(() => res.statusText);
-          throw new Error(text || 'Request failed');
+      // Section switching
+      document.getElementById('sectionSelect').addEventListener('change', function() {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        if (this.value === 'shortlist') {
+          document.getElementById('shortlistSelection').classList.add('active');
+          loadMyShortlist()
+        } else if (this.value === 'activeRequests') {
+          document.getElementById('activeRequestSection').classList.add('active');
+          loadActiveRequest()
+        } else if (this.value === 'pastMatch') {
+          document.getElementById('pastMatchSection').classList.add('active');
         }
-        return await res.json().catch(() => null);
-      } catch (err) {
-        throw new Error('API call failed: ' + err.message);
-      }
-    }
 
-    // User Accounts CRUD
-    async function submitCreate() {
-      const username = document.getElementById('createUsername').value.trim();
-      const password = document.getElementById('createPassword').value;
-      const role = document.getElementById('createRole').value;
-      
-      if (!username || !password) {
-        alert('Please enter both username and password');
-        return;
-      }
-
-      try {
-        await callApi(api.create, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, role })
-        });
-        alert('User created successfully!');
         cancelAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function submitUpdate() {
-      const id = document.getElementById('updateId').value.trim();
-      const username = document.getElementById('updateUsername').value.trim();
-      const password = document.getElementById('updatePassword').value;
-      const role = document.getElementById('updateRole').value;
-
-      if (!id) {
-        alert('Please enter a user ID');
-        return;
-      }
-
-      try {
-        await callApi(api.update, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, username, password, role })
-        });
-        alert('User updated successfully!');
-        cancelAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function submitDelete() {
-      const id = document.getElementById('deleteId').value.trim();
-
-      if (!id) {
-        alert('Please enter a user ID');
-        return;
-      }
-
-      if (!confirm('Delete user ID ' + id + '?')) return;
-
-      try {
-        await callApi(api.delete, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        alert('User deleted successfully!');
-        cancelAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function getUserId() {
-    try {
-      const url = new URL('/userId', location.origin);
-      const res = await fetch(url);
-      const rows = await res.json();
-      return rows
-    } catch (e) {
-      wrap.innerHTML = '<div class="muted">Error searching requests</div>';
-    }
-  }
-
-    async function loadMyShortlist() {
-      try {
-        const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase() || '';
-        const data = await getUserId(); 
-        value = typeof data === 'object' && data !== null
-        ? (data.id ?? '')
-        : data;
-        const data2 = await callApi(`/api/shortlist?csr_id=${value}&search=${searchTerm}`, { method: 'GET' });
-        allUsers = data2 || [];
-        renderShortlist(allUsers);
-        document.getElementById('filterSearch').value = '';
-      } catch (e) {
-        alert(e.message);
-        renderShortlist([]);
-      }
-    }
-
-    function applyFilters() {
-      const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase();
-      loadMyShortlist(searchTerm)
-      let filtered = allUsers;
-
-      renderShortlist(filtered);
-    }
-
-    function renderShortlist(data) {
-      const tbody = document.getElementById('userTableBody');
-      tbody.innerHTML = '';
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">No shortlist found</td></tr>';
-        return;
-      }
-
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(row.shortlist_id)}</td>
-          <td>${escapeHtml(row.title)}</td>
-          <td>${escapeHtml(row.description)}</td>
-          <td>${escapeHtml(row.location)}</td>
-          <td>${escapeHtml(row.notes)}</td>
-          <td>${escapeHtml(row.status)}</td>
-          <td class="table-actions">
-            <button class="btn danger" onclick="quickDelete(${row.shortlist_id})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+        cancelProfileAction();
       });
-    }
 
-    function editUser(id, username, role) {
-      closeModal();
-      document.getElementById('sectionSelect').value = 'accounts';
-      document.getElementById('shortlistSelection').classList.add('active');
-      document.getElementById('activeRequestSection').classList.remove('active');
-      document.getElementById('actionSelect').value = 'update';
-      document.getElementById('updateForm').classList.add('active');
-      document.getElementById('updateId').value = id;
-      document.getElementById('updateUsername').value = username;
-      document.getElementById('updatePassword').value = '';
-      document.getElementById('updateRole').value = role;
-    }
+      // User Accounts functionality
+      document.getElementById('actionSelect').addEventListener('change', function() {
+        document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
+        if (this.value) {
+          document.getElementById(this.value + 'Form').classList.add('active');
+        }
+      });
 
-    async function quickDelete(id) {
-      if (!confirm('Delete Request ID ' + id + '?')) return;
-      
-      try {
-        await callApi(api.delete, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        alert('Request deleted successfully!');
+      function cancelAction() {
+        document.getElementById('actionSelect').value = '';
+        document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
+        document.getElementById('createUsername').value = '';
+        document.getElementById('createPassword').value = '';
+        document.getElementById('updateId').value = '';
+        document.getElementById('updateUsername').value = '';
+        document.getElementById('updatePassword').value = '';
+        document.getElementById('deleteId').value = '';
+      }
+
+      document.getElementById('viewBtn').addEventListener('click', function() {
+        document.getElementById('viewModal').classList.add('active');
         loadMyShortlist();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    // Create new user profile
-    async function submitProfileCreate() {
-      const username = document.getElementById('createProfileUsername').value.trim();
-      const full_name = document.getElementById('createProfileFullName').value.trim();
-      const email = document.getElementById('createProfileEmail').value.trim();
-
-      if (!username || !full_name) {
-        alert('Username and full name are required');
-        return;
-      }
-
-      try {
-        await callApi(api.profileCreate, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, full_name, email })
-        });
-        alert('Profile created successfully!');
-        cancelProfileAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    // Active Request CRUD
-    async function submitProfileUpdate() {
-      const id = document.getElementById('profileUpdateId').value.trim();
-      const fullName = document.getElementById('profileFullName').value.trim();
-      const email = document.getElementById('profileEmail').value.trim();
-
-      if (!id) {
-        alert('Please enter a user ID');
-        return;
-      }
-
-      try {
-        await callApi(api.profileUpdate, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, full_name: fullName, email })
-        });
-        alert('Profile updated successfully!');
-        cancelProfileAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    // Delete user profile
-    async function submitProfileDelete() {
-      const id = document.getElementById('deleteProfileId').value.trim();
-
-      if (!id) {
-        alert('Please enter a user profile ID');
-        return;
-      }
-
-      if (!confirm('Delete user profile ID ' + id + '?')) return;
-
-      try {
-        await callApi(api.profileDelete, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        alert('Profile deleted successfully!');
-        cancelProfileAction();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function quickProfileDelete(id) {
-      if (!confirm('Delete user ID ' + id + '?')) return;
-      
-      try {
-        await callApi(api.delete, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        alert('User Profile deleted successfully!');
-        loadActiveRequest();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function loadActiveRequest() {
-      try {
-        const search = document.getElementById('filterSearch').value.trim() || '';
-        const data = await callApi(`/api/requests/active?search=${encodeURIComponent(search)}`, { method: 'GET' });
-        allProfiles = data || [];
-        renderActiveRequests(allProfiles);
-      } catch (e) {
-        alert(e.message);
-        renderActiveRequests([]);
-      }
-    }
-
-    function resetActiveRequestFilters() {
-      // Clear the search field
-      const searchInput = document.getElementById('filterSearch');
-      if (searchInput) searchInput.value = '';
-
-      // Reload the active request table
-      loadActiveRequest();
-    }
-
-
-
-    function applyProfileFilters() {
-      const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
-
-      let filtered = allProfiles;
-
-      if (searchTerm) {
-        filtered = filtered.filter(u => 
-          String(u.id).includes(searchTerm) || 
-          (u.username && u.username.toLowerCase().includes(searchTerm)) ||
-          (u.full_name && u.full_name.toLowerCase().includes(searchTerm)) ||
-          (u.email && u.email.toLowerCase().includes(searchTerm))
-        );
-      }
-
-      renderActiveRequests(filtered);
-    }
-
-    function renderActiveRequests(data) {
-      const tbody = document.getElementById('profileTableBody');
-      tbody.innerHTML = '';
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">No profiles found</td></tr>';
-        return;
-      }
-
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(row.request_id)}</td>
-          <td>${escapeHtml(row.title)}</td>
-          <td>${escapeHtml(row.description)}</td>
-          <td>${escapeHtml(row.location)}</td>
-          <td>${escapeHtml(row.notes)}</td>
-          <td>${escapeHtml(row.status)}</td>
-          <td class="table-actions">
-            <button class="btn view" onclick="saveToShortlist(${row.request_id})">Shortlist</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
       });
-    }
 
-    function editProfile(id, fullName, email) {
-      closeProfilesModal();
-      document.getElementById('sectionSelect').value = 'profiles';
-      document.getElementById('shortlistSelection').classList.remove('active');
-      document.getElementById('activeRequestSection').classList.add('active');
-      document.getElementById('profileActionSelect').value = 'updateProfile';
-      document.getElementById('updateProfileForm').classList.add('active');
-      document.getElementById('profileUpdateId').value = id;
-      document.getElementById('profileFullName').value = fullName;
-      document.getElementById('profileEmail').value = email;
-    }
+      function closeModal() {
+        document.getElementById('viewModal').classList.remove('active');
+      }
 
-    function escapeHtml(s) {
-      return String(s || '').replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[c]));
-    }
+      document.getElementById('viewModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
 
-    function escapeJs(s) {
-      return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-    }
+      
 
-    async function saveToShortlist(requestId) {
-      try {
-        // Fetch CSR ID
-        const csrData = await getUserId(); // your existing function
-        const csrId = csrData?.id;
-        if (!csrId) {
-          alert("Failed to get CSR ID");
+      // Active Request functionality
+      document.getElementById('profileActionSelect').addEventListener('change', function() {
+        document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
+        if (this.value) {
+          document.getElementById(this.value + 'Form').classList.add('active');
+        }
+      });
+
+
+      function cancelProfileAction() {
+        document.getElementById('profileActionSelect').value = '';
+        document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
+        document.getElementById('profileUpdateId').value = '';
+        document.getElementById('profileFullName').value = '';
+        document.getElementById('profileEmail').value = '';
+
+        document.getElementById('createProfileUsername').value = '';
+        document.getElementById('createProfileFullName').value = '';
+        document.getElementById('createProfileEmail').value = '';
+        document.getElementById('deleteProfileId').value = '';
+      }
+
+
+
+      function closeProfilesModal() {
+        document.getElementById('viewProfilesModal').classList.remove('active');
+      }
+
+      document.getElementById('viewProfilesModal').addEventListener('click', function(e) {
+        if (e.target === this) closeProfilesModal();
+      });
+
+      async function callApi(path, opts) {
+        try {
+          const res = await fetch(path, opts);
+          if (!res.ok) {
+            const text = await res.text().catch(() => res.statusText);
+            throw new Error(text || 'Request failed');
+          }
+          return await res.json().catch(() => null);
+        } catch (err) {
+          throw new Error('API call failed: ' + err.message);
+        }
+      }
+
+      // User Accounts CRUD
+      async function submitCreate() {
+        const username = document.getElementById('createUsername').value.trim();
+        const password = document.getElementById('createPassword').value;
+        const role = document.getElementById('createRole').value;
+        
+        if (!username || !password) {
+          alert('Please enter both username and password');
           return;
         }
 
-        // Call API
-        await callApi(`/api/shortlist`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
-        });
+        try {
+          await callApi(api.create, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role })
+          });
+          alert('User created successfully!');
+          cancelAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
 
-        alert("Added to shortlist!");
+      async function submitUpdate() {
+        const id = document.getElementById('updateId').value.trim();
+        const username = document.getElementById('updateUsername').value.trim();
+        const password = document.getElementById('updatePassword').value;
+        const role = document.getElementById('updateRole').value;
+
+        if (!id) {
+          alert('Please enter a user ID');
+          return;
+        }
+
+        try {
+          await callApi(api.update, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, username, password, role })
+          });
+          alert('User updated successfully!');
+          cancelAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      async function submitDelete() {
+        const id = document.getElementById('deleteId').value.trim();
+
+        if (!id) {
+          alert('Please enter a user ID');
+          return;
+        }
+
+        if (!confirm('Delete user ID ' + id + '?')) return;
+
+        try {
+          await callApi(api.delete, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          alert('User deleted successfully!');
+          cancelAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      async function getUserId() {
+      try {
+        const url = new URL('/userId', location.origin);
+        const res = await fetch(url);
+        const rows = await res.json();
+        return rows
       } catch (e) {
-        alert("Failed to add to shortlist: " + e.message);
+        wrap.innerHTML = '<div class="muted">Error searching requests</div>';
       }
     }
 
+      async function loadMyShortlist() {
+        try {
+          const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase() || '';
+          const data = await getUserId(); 
+          value = typeof data === 'object' && data !== null
+          ? (data.id ?? '')
+          : data;
+          const data2 = await callApi(`/api/shortlist?csr_id=${value}&search=${searchTerm}`, { method: 'GET' });
+          allUsers = data2 || [];
+          renderShortlist(allUsers);
+          document.getElementById('filterSearch').value = '';
+        } catch (e) {
+          alert(e.message);
+          renderShortlist([]);
+        }
+      }
 
-    window.cancelAction = cancelAction;
-    window.submitCreate = submitCreate;
-    window.submitUpdate = submitUpdate;
-    window.submitDelete = submitDelete;
-    window.closeModal = closeModal;
-    window.loadMyShortlist = loadMyShortlist;
-    window.applyFilters = applyFilters;
-    window.editUser = editUser;
-    window.quickDelete = quickDelete;
-    window.cancelProfileAction = cancelProfileAction;
-    window.submitProfileCreate = submitProfileCreate;
-    window.submitProfileDelete = submitProfileDelete;
-    window.submitProfileUpdate = submitProfileUpdate;
-    window.closeProfilesModal = closeProfilesModal;
-    window.loadActiveRequest = loadActiveRequest;
-    window.applyProfileFilters = applyProfileFilters;
-    window.editProfile = editProfile;
-    window.quickProfileDelete = quickProfileDelete;
-    window.saveToShortlist = saveToShortlist;
-  </script>
-</body>
-</html>
+      function applyFilters() {
+        const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase();
+        loadMyShortlist(searchTerm)
+        let filtered = allUsers;
+
+        renderShortlist(filtered);
+      }
+
+      function renderShortlist(data) {
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4">No shortlist found</td></tr>';
+          return;
+        }
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(row.shortlist_id)}</td>
+            <td>${escapeHtml(row.title)}</td>
+            <td>${escapeHtml(row.description)}</td>
+            <td>${escapeHtml(row.location)}</td>
+            <td>${escapeHtml(row.notes)}</td>
+            <td>${escapeHtml(row.status)}</td>
+            <td class="table-actions">
+              <button class="btn danger" onclick="quickDelete(${row.shortlist_id})">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function editUser(id, username, role) {
+        closeModal();
+        document.getElementById('sectionSelect').value = 'accounts';
+        document.getElementById('shortlistSelection').classList.add('active');
+        document.getElementById('activeRequestSection').classList.remove('active');
+        document.getElementById('actionSelect').value = 'update';
+        document.getElementById('updateForm').classList.add('active');
+        document.getElementById('updateId').value = id;
+        document.getElementById('updateUsername').value = username;
+        document.getElementById('updatePassword').value = '';
+        document.getElementById('updateRole').value = role;
+      }
+
+      async function quickDelete(id) {
+        if (!confirm('Delete Request ID ' + id + '?')) return;
+        
+        try {
+          await callApi(api.delete, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          alert('Request deleted successfully!');
+          loadMyShortlist();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // Create new user profile
+      async function submitProfileCreate() {
+        const username = document.getElementById('createProfileUsername').value.trim();
+        const full_name = document.getElementById('createProfileFullName').value.trim();
+        const email = document.getElementById('createProfileEmail').value.trim();
+
+        if (!username || !full_name) {
+          alert('Username and full name are required');
+          return;
+        }
+
+        try {
+          await callApi(api.profileCreate, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, full_name, email })
+          });
+          alert('Profile created successfully!');
+          cancelProfileAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // Active Request CRUD
+      async function submitProfileUpdate() {
+        const id = document.getElementById('profileUpdateId').value.trim();
+        const fullName = document.getElementById('profileFullName').value.trim();
+        const email = document.getElementById('profileEmail').value.trim();
+
+        if (!id) {
+          alert('Please enter a user ID');
+          return;
+        }
+
+        try {
+          await callApi(api.profileUpdate, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, full_name: fullName, email })
+          });
+          alert('Profile updated successfully!');
+          cancelProfileAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // Delete user profile
+      async function submitProfileDelete() {
+        const id = document.getElementById('deleteProfileId').value.trim();
+
+        if (!id) {
+          alert('Please enter a user profile ID');
+          return;
+        }
+
+        if (!confirm('Delete user profile ID ' + id + '?')) return;
+
+        try {
+          await callApi(api.profileDelete, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          alert('Profile deleted successfully!');
+          cancelProfileAction();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      async function quickProfileDelete(id) {
+        if (!confirm('Delete user ID ' + id + '?')) return;
+        
+        try {
+          await callApi(api.delete, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          alert('User Profile deleted successfully!');
+          loadActiveRequest();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      async function loadActiveRequest() {
+        try {
+          const search = document.getElementById('filterSearch').value.trim() || '';
+          const data = await callApi(`/api/requests/active?search=${encodeURIComponent(search)}`, { method: 'GET' });
+          allProfiles = data || [];
+          renderActiveRequests(allProfiles);
+        } catch (e) {
+          alert(e.message);
+          renderActiveRequests([]);
+        }
+      }
+
+      function resetActiveRequestFilters() {
+        // Clear the search field
+        const searchInput = document.getElementById('filterSearch');
+        if (searchInput) searchInput.value = '';
+
+        // Reload the active request table
+        loadActiveRequest();
+      }
+
+
+
+      function applyProfileFilters() {
+        const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
+
+        let filtered = allProfiles;
+
+        if (searchTerm) {
+          filtered = filtered.filter(u => 
+            String(u.id).includes(searchTerm) || 
+            (u.username && u.username.toLowerCase().includes(searchTerm)) ||
+            (u.full_name && u.full_name.toLowerCase().includes(searchTerm)) ||
+            (u.email && u.email.toLowerCase().includes(searchTerm))
+          );
+        }
+
+        renderActiveRequests(filtered);
+      }
+
+      function renderActiveRequests(data) {
+        const tbody = document.getElementById('profileTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No profiles found</td></tr>';
+          return;
+        }
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(row.request_id)}</td>
+            <td>${escapeHtml(row.title)}</td>
+            <td>${escapeHtml(row.description)}</td>
+            <td>${escapeHtml(row.location)}</td>
+            <td>${escapeHtml(row.notes)}</td>
+            <td>${escapeHtml(row.status)}</td>
+            <td class="table-actions">
+              <button class="btn view" onclick="saveToShortlist(${row.request_id})">Shortlist</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function editProfile(id, fullName, email) {
+        closeProfilesModal();
+        document.getElementById('sectionSelect').value = 'profiles';
+        document.getElementById('shortlistSelection').classList.remove('active');
+        document.getElementById('activeRequestSection').classList.add('active');
+        document.getElementById('profileActionSelect').value = 'updateProfile';
+        document.getElementById('updateProfileForm').classList.add('active');
+        document.getElementById('profileUpdateId').value = id;
+        document.getElementById('profileFullName').value = fullName;
+        document.getElementById('profileEmail').value = email;
+      }
+
+      function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+      }
+
+      function escapeJs(s) {
+        return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+      }
+
+      async function saveToShortlist(requestId) {
+        try {
+          // Fetch CSR ID
+          const csrData = await getUserId(); // your existing function
+          const csrId = csrData?.id;
+          if (!csrId) {
+            alert("Failed to get CSR ID");
+            return;
+          }
+
+          // Call API
+          await callApi(`/api/shortlist`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
+          });
+
+          alert("Added to shortlist!");
+        } catch (e) {
+          alert("Failed to add to shortlist: " + e.message);
+        }
+      }
+
+
+      window.cancelAction = cancelAction;
+      window.submitCreate = submitCreate;
+      window.submitUpdate = submitUpdate;
+      window.submitDelete = submitDelete;
+      window.closeModal = closeModal;
+      window.loadMyShortlist = loadMyShortlist;
+      window.applyFilters = applyFilters;
+      window.editUser = editUser;
+      window.quickDelete = quickDelete;
+      window.cancelProfileAction = cancelProfileAction;
+      window.submitProfileCreate = submitProfileCreate;
+      window.submitProfileDelete = submitProfileDelete;
+      window.submitProfileUpdate = submitProfileUpdate;
+      window.closeProfilesModal = closeProfilesModal;
+      window.loadActiveRequest = loadActiveRequest;
+      window.applyProfileFilters = applyProfileFilters;
+      window.editProfile = editProfile;
+      window.quickProfileDelete = quickProfileDelete;
+      window.saveToShortlist = saveToShortlist;
+    </script>
+  </body>
+  </html>
