@@ -6,7 +6,13 @@ class SaveShortlistController:
     def __init__(self, shortlist_repo: ShortlistRepository):
         self.shortlist_repo = shortlist_repo
     # 1. Shortlist request
-    def add_to_shortlist(self, csr_id: int, request_id: int, notes: Optional[str]) -> None:
+    def toggle_shortlist(self, csr_id: int, request_id: int, notes: Optional[str]) -> None:
+        print(self.shortlist_repo.get_shortlist_by_userid_and_requestid(csr_id, request_id))
+        if (self.shortlist_repo.get_shortlist_by_userid_and_requestid(csr_id, request_id)):
+            print(csr_id, request_id)
+            self.shortlist_repo.delete_shortlist_by_userid_and_requestid(csr_id, request_id)
+            return
+        print("2")
         added_at = datetime.now()
         self.shortlist_repo.save_shortlist(csr_id, request_id, notes, added_at)
 

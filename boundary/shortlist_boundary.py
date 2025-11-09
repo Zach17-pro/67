@@ -41,7 +41,7 @@ def save_shortlist():
 
         request_id = data.get("request_id")
         notes = data.get("notes")
-        result = SaveShortlistController(shortRepo()).add_to_shortlist(
+        result = SaveShortlistController(shortRepo()).toggle_shortlist(
             csr_id=csr_id,
             request_id=request_id,
             notes=notes

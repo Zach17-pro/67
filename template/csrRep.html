@@ -65,9 +65,9 @@
               <tr>
                 <th>ID</th>
                 <th>title</th>
-                <th>description</th>
                 <th>location</th>
                 <th>status</th>
+                <th>action</th>
               </tr>
             </thead>
             <tbody id="userTableBody">
@@ -165,9 +165,9 @@
             <tr>
               <th>ID</th>
               <th>title</th>
-              <th>description</th>
               <th>location</th>
               <th>status</th>
+              <th>action</th>
             </tr>
           </thead>
           <tbody id="profileTableBody">
@@ -202,7 +202,6 @@
               <th>title</th>
               <th>description</th>
               <th>location</th>
-              <th>notes</th>
               <th>status</th>
             </tr>
           </thead>
@@ -259,10 +258,10 @@
         document.getElementById('deleteId').value = '';
       }
 
-      document.getElementById('viewBtn').addEventListener('click', function() {
-        document.getElementById('viewModal').classList.add('active');
-        loadMyShortlist();
-      });
+      // document.getElementById('viewBtn').addEventListener('click', function() {
+      //   document.getElementById('viewModal').classList.add('active');
+      //   loadMyShortlist();
+      // });
 
       function closeModal() {
         document.getElementById('viewModal').classList.remove('active');
@@ -438,13 +437,12 @@
         data.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${escapeHtml(row.shortlist_id)}</td>
+            <td>${escapeHtml(row.request_id)}</td>
             <td>${escapeHtml(row.title)}</td>
-            <td>${escapeHtml(row.description)}</td>
             <td>${escapeHtml(row.location)}</td>
-            <td>${escapeHtml(row.notes)}</td>
             <td>${escapeHtml(row.status)}</td>
             <td class="table-actions">
+              <button class="btn" onclick="">View</button>
               <button class="btn danger" onclick="quickDelete(${row.shortlist_id})">Delete</button>
             </td>
           `;
@@ -467,7 +465,7 @@
 
       async function quickDelete(id) {
         if (!confirm('Delete Request ID ' + id + '?')) return;
-        
+
         try {
           await callApi(api.delete, {
             method: 'DELETE',
@@ -573,13 +571,24 @@
         try {
           const search = document.getElementById('filterSearch').value.trim() || '';
           const data = await callApi(`/api/requests/active?search=${encodeURIComponent(search)}`, { method: 'GET' });
-          allProfiles = data || [];
+          const userId = await getUserId(); 
+          const shortlist = await callApi(`/api/shortlist?csr_id=${userId.id}&search=${search}`, { method: 'GET' });
+          const shortlistIds = new Set(shortlist.map(item => item.request_id)); // [web:6]
+
+          const annotated = data.map(item => ({
+            ...item,
+            shortlist: shortlistIds.has(item.request_id)
+          }));
+          allProfiles = annotated || [];
+          console.log(allProfiles)
           renderActiveRequests(allProfiles);
         } catch (e) {
           alert(e.message);
           renderActiveRequests([]);
         }
       }
+
+      
 
       function resetActiveRequestFilters() {
         // Clear the search field
@@ -623,12 +632,10 @@
           tr.innerHTML = `
             <td>${escapeHtml(row.request_id)}</td>
             <td>${escapeHtml(row.title)}</td>
-            <td>${escapeHtml(row.description)}</td>
             <td>${escapeHtml(row.location)}</td>
-            <td>${escapeHtml(row.notes)}</td>
             <td>${escapeHtml(row.status)}</td>
             <td class="table-actions">
-              <button class="btn view" onclick="saveToShortlist(${row.request_id})">Shortlist</button>
+              <button class="btn ${row.shortlist ? "secondary" : "view"}" onclick="toggleShortlist(${row.request_id})">${row.shortlist ? "Unshortlist" : "Shortlist"}</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -657,7 +664,7 @@
         return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
       }
 
-      async function saveToShortlist(requestId) {
+      async function toggleShortlist(requestId) {
         try {
           // Fetch CSR ID
           const csrData = await getUserId(); // your existing function
@@ -673,6 +680,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
           });
+          loadActiveRequest();
 
           alert("Added to shortlist!");
         } catch (e) {
@@ -699,7 +707,7 @@
       window.applyProfileFilters = applyProfileFilters;
       window.editProfile = editProfile;
       window.quickProfileDelete = quickProfileDelete;
-      window.saveToShortlist = saveToShortlist;
+      window.toggleShortlist = toggleShortlist;
     </script>
   </body>
   </html>
