@@ -15,8 +15,6 @@
 
 #32
 # As a PIN, I want to view the number of times my request has been viewed so that I can gauge interest
-#33
-# As a pin, I want to view number of times my request has been shortlisted so that I know potential matches
 
 from typing import List, Optional, Any, Dict
 from datetime import datetime
@@ -48,6 +46,7 @@ class RequestRepository:
             view_count=row["view_count"],
             shortlist_count=row["shortlist_count"],
             category_id=row.get("category_id"),
+            category_name=row.get("category_name"),
             location=row["location"],
         )
 
@@ -78,6 +77,25 @@ class RequestRepository:
         cur.close()
         # Return full row
         return self.get_request_by_id(new_id)
+    
+    def get_increment_request_view(self, request_id: int):
+        try:
+            cur = self.db.cursor()
+            cur.execute(
+                """
+                UPDATE request
+                SET view_count = view_count + 1
+                WHERE request_id = %s
+                AND status = 'Open' OR status = 'In Progress';
+                """,
+                (request_id, ),
+            )
+            self.db.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            return False
+
 
     # ---------- utility: get by id (scoped or not) ----------
     def get_request_by_id(self, request_id: int, pin_user_id: Optional[int] = None) -> Optional[Request]:
@@ -88,26 +106,29 @@ class RequestRepository:
         if pin_user_id is None:
             cur.execute(
                 """
-                SELECT request_id, pin_user_id, title, description, status,
-                       created_at, updated_at, view_count, shortlist_count,
-                       category_id, location
-                FROM request
-                WHERE request_id = %s
+                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
+                FROM request r
+                LEFT JOIN service_category s ON s.category_id = r.category_id
+                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
+                WHERE r.request_id = %s
+                GROUP BY r.request_id
                 """,
                 (request_id,),
             )
         else:
             cur.execute(
                 """
-                SELECT request_id, pin_user_id, title, description, status,
-                       created_at, updated_at, view_count, shortlist_count,
-                       category_id, location
-                FROM request
-                WHERE request_id = %s AND pin_user_id = %s
+                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
+                FROM request r
+                LEFT JOIN service_category s ON s.category_id = r.category_id
+                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
+                WHERE r.request_id = %s AND r.pin_user_id = %s
+                GROUP BY r.request_id
                 """,
                 (request_id, pin_user_id),
             )
         row = cur.fetchone()
+        print(row)
         cur.close()
         return self._row_to_request(row) if row else None
 

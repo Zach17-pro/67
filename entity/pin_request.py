@@ -15,4 +15,5 @@ class Request:
     view_count: int
     shortlist_count: int
     category_id: Optional[int]
+    category_name: Optional[str]
     location: str

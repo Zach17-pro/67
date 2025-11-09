@@ -23,6 +23,7 @@ class ReadRequestController:
 
     def read_request(self, *, request_id: int):
         RequestValidation._require_positive_id(request_id, "pin_user_id")
+        self.request_repo.get_increment_request_view(request_id)
         return self.request_repo.get_request_by_id(request_id)
 
 class CreatePinRequestController:

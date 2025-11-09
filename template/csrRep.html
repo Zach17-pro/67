@@ -41,6 +41,12 @@
         .hint { color: #666; font-size: 12px; margin-top: 16px; }
         .section { display: none; }
         .section.active { display: block; }
+        .meta {margin: 0;}
+        .meta dl {margin: 0;display: grid;grid-template-columns: 180px 1fr;gap: 8px 14px;align-items: start;}
+        @media (max-width: 520px) {.meta dl {grid-template-columns: 1fr;}}
+        .meta dt {font-weight: 600;color: var(--muted);}
+        .meta dd {margin: 0;word-break: break-word;}
+        .description {margin-top: 12px;padding: 14px;background: #f9fafb;border: 1px solid var(--border);border-radius: 10px;color: #374151;}
     </style>
   </head>
   <body>
@@ -180,39 +186,24 @@
 
 
     <!-- View Users Modal -->
-    <div id="viewModal" class="modal">
+
+
+    <!-- View Request Modal -->
+    <div id="viewRequestModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>My Shortlist</h3>
-          <button class="close-btn" onclick="closeModal()">&times;</button>
+          <h3>Request Details</h3>
+          <button class="close-btn" onclick="closeRequestModal()">&times;</button>
         </div>
-        
-        <div class="filter-row">
-          <div>
-            <label for="filterSearch">Search</label>
-            <input type="text" id="filterSearch" placeholder="Search by title, description, notes" />
-          </div>
-          <button class="btn" onclick="loadMyShortlist()">Apply</button>
-        </div>
-
+      
+  
         <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>title</th>
-              <th>description</th>
-              <th>location</th>
-              <th>status</th>
-            </tr>
-          </thead>
-          <tbody id="userTableBody">
-            <tr><td colspan="4">Loading...</td></tr>
+          <tbody id="selectedRequestBody">
+            <tr><td colspan="5">Loading...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
-
-    <!-- View Profiles Modal -->
 
     <script>
       const api = {
@@ -239,6 +230,10 @@
         cancelProfileAction();
       });
 
+      document.addEventListener("DOMContentLoaded", () => {
+        loadMyShortlist()
+      })
+
       // User Accounts functionality
       document.getElementById('actionSelect').addEventListener('change', function() {
         document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
@@ -258,10 +253,11 @@
         document.getElementById('deleteId').value = '';
       }
 
-      // document.getElementById('viewBtn').addEventListener('click', function() {
-      //   document.getElementById('viewModal').classList.add('active');
-      //   loadMyShortlist();
-      // });
+      document.getElementById('viewBtn').addEventListener('click', function() {
+        document.getElementById('viewModal').classList.add('active');
+        loadAllUsers();
+      });
+
 
       function closeModal() {
         document.getElementById('viewModal').classList.remove('active');
@@ -295,13 +291,85 @@
         document.getElementById('deleteProfileId').value = '';
       }
 
-
-
-      function closeProfilesModal() {
-        document.getElementById('viewProfilesModal').classList.remove('active');
+      async function loadSelectedRequest(request_id) {
+        try {
+          const data = await callApi("api/requests/"+request_id, { method: 'GET' }); 
+          console.log(data)
+          renderRequest(data);
+        } catch (e) {
+          alert(e.message);
+          renderRequest({});
+        }
       }
 
-      document.getElementById('viewProfilesModal').addEventListener('click', function(e) {
+      function renderRequest(data) {
+      const tbody = document.getElementById('selectedRequestBody');
+      tbody.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">Oops something went wrong while retrieving request details</td></tr>';
+        return;
+      }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <div class="meta" aria-labelledby="details-heading">
+            <dl>
+              <dt>Title</dt>
+              <dd>${escapeHtml(data.title)}</dd>
+              <dt>Description</dt>
+              <dd>
+                <div>${escapeHtml(data.description)}</div>
+              </dd>
+
+              <dt>Category</dt>
+              <dd>${data.category_name ? data.category_name : "No Category Provided"}</dd>
+
+              <dt>Location</dt>
+              <dd>${escapeHtml(data.location)}</dd>
+
+              <dt>Status</dt>
+              <dd>${escapeHtml(data.status)}</dd>
+
+              <dt>Shortlist Count</dt>
+              <dd>${data.shortlist_count}</dd>
+
+              <dt>View Count</dt>
+              <dd>${data.view_count}</dd>
+
+              <dt>Pin User ID</dt>
+              <dd>${data.pin_user_id}</dd>
+
+              <dt>Created At</dt>
+              <dd>
+                <time datetime="2025-11-09T19:17:48Z" data-ts="2025-11-09T19:17:48Z">
+                  ${escapeHtml(data.created_at)}
+                </time>
+              </dd>
+
+              <dt>Updated At</dt>
+              <dd>
+                <time datetime="2025-11-09T19:17:48Z" data-ts="2025-11-09T19:17:48Z">
+                  ${escapeHtml(data.updated_at)}
+                </time>
+              </dd>
+            </dl>
+          </div>
+        `;
+        tbody.appendChild(tr);
+      
+    }
+
+
+      function openRequestModal(request_id){
+        document.getElementById('viewRequestModal').classList.add('active');
+        loadSelectedRequest(request_id);
+      }
+
+      function closeRequestModal() {
+        document.getElementById('viewRequestModal').classList.remove('active');
+      }
+
+      document.getElementById('viewRequestModal').addEventListener('click', function(e) {
         if (e.target === this) closeProfilesModal();
       });
 
@@ -442,8 +510,8 @@
             <td>${escapeHtml(row.location)}</td>
             <td>${escapeHtml(row.status)}</td>
             <td class="table-actions">
-              <button class="btn" onclick="">View</button>
-              <button class="btn danger" onclick="quickDelete(${row.shortlist_id})">Delete</button>
+              <button class="btn" onclick="openRequestModal(${row.request_id})">View</button>
+              <button class="btn danger" onclick="toggleShortlist(${row.request_id})">Delete</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -462,6 +530,7 @@
         document.getElementById('updatePassword').value = '';
         document.getElementById('updateRole').value = role;
       }
+
 
       async function quickDelete(id) {
         if (!confirm('Delete Request ID ' + id + '?')) return;
@@ -635,6 +704,7 @@
             <td>${escapeHtml(row.location)}</td>
             <td>${escapeHtml(row.status)}</td>
             <td class="table-actions">
+              <button class="btn" onclick="openRequestModal(${row.request_id})">View</button>
               <button class="btn ${row.shortlist ? "secondary" : "view"}" onclick="toggleShortlist(${row.request_id})">${row.shortlist ? "Unshortlist" : "Shortlist"}</button>
             </td>
           `;
@@ -664,6 +734,9 @@
         return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
       }
 
+        
+
+
       async function toggleShortlist(requestId) {
         try {
           // Fetch CSR ID
@@ -681,8 +754,9 @@
             body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
           });
           loadActiveRequest();
+          loadMyShortlist();
 
-          alert("Added to shortlist!");
+          // alert("Added to shortlist!");
         } catch (e) {
           alert("Failed to add to shortlist: " + e.message);
         }
