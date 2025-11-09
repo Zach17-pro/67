@@ -15,6 +15,7 @@
 
 from typing import List, Dict, Any
 from entity.user_repository import UserRepository
+import uuid
 
 class UserController:
     def __init__(self, repo: UserRepository):
@@ -24,28 +25,28 @@ class UserController:
     ###### USER ACCOUNTS ######
     ###########################
 
-class UserAdminCreateUserAccountController:
+class UserAdminCreateUserAccountController(UserController):
     #2 As a user admin, I want to create user accounts so that new users can access the system.
-    def create_user(self, username: str, password: str, role: str, full_name: str):
-        return self.repo.create_user(username, password, role, full_name)
+    def create_user(self, username: str, password: str, role: str):
+        return self.repo.create_user(username, password, role)
 
-class UserAdminVieweUserAccountController:
+class UserAdminViewUserAccountController(UserController):
     #3 As a user admin, I want to view user accounts so that I can retrieve stored information.
     def list_users(self):
         return self.repo.list_users()
 
-class UserAdminEditUserAccountController:
+class UserAdminEditUserAccountController(UserController):
     #4 As a user admin, I want to update user accounts so that the latest information is stored.
     def update_user(self, user_id: int, username: str, role: str, password: str = None):
         return self.repo.update_user(user_id, username, role, password)
 
-class UserAdminDeleteUserAccountController:
+class UserAdminDeleteUserAccountController(UserController):
     #5 As a user admin, I want to delete user accounts so that unused or invalid accounts are removed.
     def delete_user(self, user_id: int):
          #Return confirmation dictionary from repository
         return self.repo.delete_user(user_id)
 
-class UserAdminSearchUserAccountController:
+class UserAdminSearchUserAccountController(UserController):
     #6 As a user admin, I want to search for user accounts so that I can quickly locate them.
     def search_users(self, keyword: str):
         # simple search: match username or role (can be improved)
@@ -60,28 +61,28 @@ class UserAdminSearchUserAccountController:
     ###### USER PROFILES ######
     ###########################
 
-class UserAdminCreateUserProfileController:
-    #7 As a user admin, I want to create user profiles so that users’ details are recorded.
+class UserAdminCreateUserProfileController(UserController):
     def create_profile(self, username: str, full_name: str, email: str):
-        return self.repo.create_profile(username, full_name, email)
+        password = str(uuid.uuid4())
+        return self.repo.create_profile(username, full_name, email, password)
 
-class UserAdminViewUserProfileController:
+class UserAdminViewUserProfileController(UserController):
     #8 As a user admin, I want to view user profiles so that I can check stored information.
     def list_profiles(self):
         return self.repo.list_profiles()
 
-class UpdateUserProfileController:
+class UserAdminEditUserProfileController(UserController):
     #9 As a user admin, I want to update user profiles so that details remain current.
     def update_profile(self, user_id: int, full_name: str, email: str):
         return self.repo.update_profile(user_id, full_name, email)
 
-class DeleteUserProfileController:
+class UserAdminDeleteUserProfileController(UserController):
     #10 As a user admin, I want to delete user profiles so that invalid records are removed.
     def delete_profile(self, user_id: int):
         # Return confirmation dictionary from repository
         return self.repo.delete_profile(user_id)
 
-class SearchUserProfileController:
+class UserAdminSearchUserProfileController(UserController):
     #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
     def search_profiles(self, keyword: str):
         return self.repo.search_profiles(keyword)
