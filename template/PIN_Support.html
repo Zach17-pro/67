@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=visibility" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>PIN Dashboard | SixSeven</title>
 <style>
@@ -42,6 +43,9 @@
   .note { font-size: 12px; color: #6b7280; margin-top: 6px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .hidden { display: none !important; }
+  .count-with-icon {white-space: nowrap;}
+  .count-with-icon .eye-btn {margin-left: .375rem;border: 0;background: none;padding: 0;cursor: pointer;vertical-align: middle;line-height: 0;}
+  .material-symbols-outlined {font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-size: 1em;color: #666;}
   .id-badge { display:inline-block; padding:6px 10px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; font-weight:600; }
 </style>
 </head>
@@ -679,14 +683,19 @@
         <td>${pill(r.status)}</td>
         <td>${escapeHtml(r.location || '')}</td>
         <td class="muted">${r.created_at || ''}</td>
+        <td>${escapeHtml(r.shortlist_count || 0)}</td>
+        <td class="count-with-icon">
+          <span class="material-symbols-outlined">visibility</span>
+          ${escapeHtml(r.view_count || 0)}
+        </td>
         <td class="actions">
-          <button class="btn btn-ghost" onclick="preselect(${r.request_id}, '${escapeAttr(r.title)}', '${escapeAttr(r.location)}', ${r.category_id != null ? r.category_id : 'null'}, '${escapeAttr(r.status)}')">Select</button>
+          <button class="btn btn-ghost" onclick="onSelect(${r.request_id})">Select</button>
         </td>
       </tr>
     `).join('');
     return `
       <table>
-        <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Location</th><th>Created</th><th></th></tr></thead>
+        <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Location</th><th>Created</th><th>Shortlist Count</th><th></th></tr></thead>
         <tbody>${tr}</tbody>
       </table>`;
   }
@@ -713,16 +722,30 @@
       </table>`;
   }
 
-  function preselect(id, title, location, category_id, status) {
-    document.getElementById('ud_id').value = id;
-    document.getElementById('ud_title').value = title || '';
-    document.getElementById('ud_location').value = location || '';
-    const sel = document.getElementById('ud_category');
-    if (sel) sel.value = (category_id == null ? '' : String(category_id));
-    document.getElementById('ud_desc').value = '';
+  async function callApi(path, opts) {
+        try {
+          const res = await fetch(path, opts);
+          if (!res.ok) {
+            const text = await res.text().catch(() => res.statusText);
+            throw new Error(text || 'Request failed');
+          }
+          return await res.json().catch(() => null);
+        } catch (err) {
+          throw new Error('API call failed: ' + err.message);
+        }
+      }
+
+  async function onSelect(id) {
+    const data = await callApi("api/requests/"+id, { method: 'GET' }); 
+    document.getElementById('ud_id').value = data.request_id;
+    document.getElementById('ud_title').value = data.title;
+    document.getElementById('ud_location').value = data.location;
+    document.getElementById('ud_category').value = data.category_id|| "No Category Provided";
+    document.getElementById('ud_desc').value = data.description;
+    console.log(data)
     // keep the dropdown as "(no change)" but remember current DB status
-    document.getElementById('ud_status').value = '';
-    document.getElementById('ud_current_status').value = status || '';
+    document.getElementById('ud_status').value = data.status;
+    document.getElementById('ud_current_status').value = data.status || '';
     document.getElementById('ud_msg').textContent = 'Loaded request ' + id + ' into editor below.';
     showUndoButtonIfNeeded();
   }

@@ -144,12 +144,13 @@ class RequestRepository:
         """
         params: List[Any] = [pin_user_id]
         sql = """
-            SELECT request_id, pin_user_id, title, description, status,
-                   created_at, updated_at, view_count, shortlist_count,
-                   category_id, location
-            FROM request
-            WHERE pin_user_id = %s
-        """
+                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
+                FROM request r
+                LEFT JOIN service_category s ON s.category_id = r.category_id
+                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
+                WHERE r.pin_user_id = %s
+                GROUP BY r.request_id
+                """
         if status:
             sql += " AND status = %s"
             params.append(status)
