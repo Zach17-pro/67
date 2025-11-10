@@ -615,9 +615,8 @@
         try {
             const searchTerm = document.getElementById('filterSearch').value.trim() || '';
             const userData = await getUserId(); 
-            const csrId = userData?.id ?? userData;
             // Call API to get past matches (Completed requests)
-            const data3 = await callApi(`/api/pin/matches/past?csr_user_id=${csrId}&keyword=${encodeURIComponent(searchTerm)}`,{ method: 'GET' });
+            const data3 = await callApi(`/api/pin/matches/search?csr_user_id=${userData.id}&keyword=${encodeURIComponent(searchTerm)}`,{ method: 'GET' });
             console.log(data3)
             allPastMatches = data3 || [];
             renderPastMatches(allPastMatches);

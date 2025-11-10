@@ -72,3 +72,34 @@ class ShortlistRepository:
             return cur.fetchone()[0]
         finally:
             cur.close()
+
+    def search_shortlist(self, csr_id: int, query: str) -> List[Dict[str, Any]]:
+        cur = self.db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT 
+                    s.shortlist_id,
+                    s.csr_user_id,
+                    s.request_id,
+                    s.notes,
+                    s.added_at,
+                    r.title,
+                    r.description,
+                    r.status,
+                    r.category_id,
+                    r.created_at
+                FROM shortlist s
+                JOIN request r ON s.request_id = r.request_id
+                WHERE s.csr_user_id = %s
+                AND (
+                    r.title LIKE %s
+                    OR r.description LIKE %s
+                    OR s.notes LIKE %s
+                )
+                ORDER BY r.created_at DESC
+            """
+            like_query = f"%{query}%"
+            cur.execute(sql, (csr_id, like_query, like_query, like_query))
+            return cur.fetchall()
+        finally:
+            cur.close()

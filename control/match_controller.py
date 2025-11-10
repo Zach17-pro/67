@@ -56,7 +56,8 @@ class MatchController:
     def search_past_matches(
         self,
         *,
-        pin_user_id: int,
+        user_id: int,
+        user_type: str,
         category_id: Optional[int] = None,
         keyword: Optional[str] = None,
         service_date_from: Optional[date | str] = None,
@@ -65,7 +66,7 @@ class MatchController:
         completion_to: Optional[datetime | str] = None,
         order_desc: bool = True,
     ) -> List[Match]:
-        self._require_positive_id(pin_user_id, "pin_user_id")
+        self._require_positive_id(user_id, user_type)
         if category_id is not None:
             self._require_positive_id(category_id, "category_id")
 
@@ -78,7 +79,8 @@ class MatchController:
         self._require_dt_order(comp_from, comp_to)
 
         return self.match_repo.search_past_matches(
-            pin_user_id=pin_user_id,
+            user_id=user_id,
+            user_type=user_type,
             category_id=category_id,
             keyword=(keyword.strip() if isinstance(keyword, str) and keyword.strip() else None),
             service_date_from=svc_from,

@@ -203,7 +203,8 @@ class MatchRepository:
     # --- search past matches (robust) ---
     def search_past_matches(
         self,
-        pin_user_id: int,
+        user_id: int,
+        user_type: str,
         *,
         category_id: Optional[int] = None,
         keyword: Optional[str] = None,
@@ -222,15 +223,17 @@ class MatchRepository:
                 m.match_id, m.request_id, m.csr_user_id, m.pin_user_id,
                 m.service_date, m.completion_date, m.status,
                 r.title AS request_title, r.category_id, r.location,
-                sc.category_name
+                r.description, sc.category_name
             FROM `match` m
             JOIN request r ON r.request_id = m.request_id
             LEFT JOIN service_category sc ON sc.category_id = r.category_id
-            WHERE m.pin_user_id = %s
-            AND LOWER(TRIM(m.status)) = 'completed'
-            AND m.completion_date IS NOT NULL
+            WHERE m.
         """
-        params: List[Any] = [pin_user_id]
+        sql += user_type
+
+        sql += """ = %s AND LOWER(TRIM(m.status)) = 'completed'
+            AND m.completion_date IS NOT NULL"""
+        params: List[Any] = [user_id]
 
         if category_id is not None:
             sql += " AND r.category_id = %s"
@@ -263,6 +266,7 @@ class MatchRepository:
         try:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
+            print(rows)
             return [self._row_to_match(r) for r in rows]
         finally:
             cur.close()

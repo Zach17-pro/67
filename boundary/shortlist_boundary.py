@@ -19,7 +19,7 @@ def csr_view_shortlist():
     try:
         csr_id = request.args.get("csr_id", type=int)
         if not csr_id:
-            return jsonify({"error": "pin_user_id is required"}), 400
+            return jsonify({"error": "csr_id is required"}), 400
         search = request.args.get("search", type=str)
         if not search:
             search = ""
@@ -51,26 +51,19 @@ def save_shortlist():
         return jsonify({"error": str(e)}), 500
 
 
-# @csr_shortlist_api.get("/search")
-# def search_shortlist():
-#     """
-#     Search CSR's shortlist by filters: keyword, status, category_id
-#     """
-#     try:
-#         csr_id = request.args.get("csr_id")
-#         keyword = request.args.get("keyword")
-#         status = request.args.get("status")
-#         category_id = request.args.get("category_id", type=int)
-
-#         db = current_app.config["DB"]
-#         repo = RequestRepository(db)
-#         items = repo.search_shortlist(
-#             csr_id=csr_id,
-#             keyword=keyword,
-#             status=status,
-#             category_id=category_id,
-#         )
-
-#         return jsonify([i.__dict__ for i in items])
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
+@csr_shortlist_api.get("/search")
+def search_shortlist():
+    """
+    Search CSR's shortlist by filters: keyword, status, category_id
+    """
+    try:
+        csr_id = request.args.get("csr_id", type=int)
+        if not csr_id:
+            return jsonify({"error": "csr_id is required"}), 400
+        search = request.args.get("search", type=str)
+        if not search:
+            search = ""
+        results = SearchShortlistController(shortRepo()).search_shortlist(csr_id, search)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
