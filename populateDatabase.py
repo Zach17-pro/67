@@ -53,7 +53,7 @@ def create_user(password, email, username, role, created_at, fullname=None):
             raise Exception(f"Error creating user: {e}")
         
 users_to_create = [('1','admin@email.c','SystemAdmin','Admin','2025-10-20 04:04:41'),
-                   ('11','csr@email.com','CSR','Platform_Manager','2025-10-20 04:04:41'),
+                   ('11','csr@email.com','CSR','csr_rep','2025-10-20 04:04:41'),
                    ('pin123','pin@email.com','pin01','PIN_Support','2025-10-20 04:04:41'),
                    ('2','mgr@email.com','mgr','Platform_Manager','2025-10-20 04:04:41'),
                    ('1', None, 'ganbf','Admin','2025-10-20 11:26:35')]

@@ -36,7 +36,7 @@ These are the current users populated in the database
 | **username**| **password**  | **role** 
 | SystemAdmin | 1             | Admin
 | ganbf       | 1             | Admin
-| CSR         | 11            | Platform_Manager
+| CSR         | 11            | csr_rep
 | mgr         | 2             | Platform_Manager
 | pin01       | pin123        | PIN_Support
 
