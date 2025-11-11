@@ -79,9 +79,9 @@ def view_past_matches():
         provided = [(k, v) for k, v in (("pin_user_id", pin), ("csr_user_id", csr)) if v is not None]
 
         if len(provided) == 0:
-            jsonify({'error':"Provide exactly one of pin_user_id or csr_user_id"}, 400) 
+            jsonify({'error':"Provide exactly one of pin_user_id or csr_user_id"}), 400 
         if len(provided) > 1:
-            jsonify({'error':"Provide only one of pin_user_id or csr_user_id"}, 400) 
+            jsonify({'error':"Provide only one of pin_user_id or csr_user_id"}), 400 
 
         attr, user_id = provided[0]
 
@@ -100,7 +100,7 @@ def view_past_matches():
         return jsonify({"error": str(e)}), 500
 
 # GET /api/pin/matches/search?pin_user_id=3&keyword=transport&category_id=...&service_date_from=...&completion_to=...
-@match_api.get("/search")
+@match_api.get("/complete")
 def search_past_matches():
     try:
         pin = request.args.get("pin_user_id", type=int)
@@ -109,16 +109,16 @@ def search_past_matches():
         provided = [(k, v) for k, v in (("pin_user_id", pin), ("csr_user_id", csr)) if v is not None]
 
         if len(provided) == 0:
-            jsonify({'error':"Provide exactly one of pin_user_id or csr_user_id"}, 400) 
+            jsonify({'error':"Provide exactly one of pin_user_id or csr_user_id"}), 400 
         if len(provided) > 1:
-            jsonify({'error':"Provide only one of pin_user_id or csr_user_id"}, 400) 
+            jsonify({'error':"Provide only one of pin_user_id or csr_user_id"}), 400 
 
         attr, user_id = provided[0]
 
         items = controller().search_past_matches(
             user_id=user_id,
             user_type=attr,
-            keyword=request.args.get("keyword"),
+            keyword=request.args.get("keyword",),
             category_id=request.args.get("category_id", type=int),
             service_date_from=request.args.get("service_date_from"),
             service_date_to=request.args.get("service_date_to"),

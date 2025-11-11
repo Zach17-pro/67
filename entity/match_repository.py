@@ -266,7 +266,6 @@ class MatchRepository:
         try:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
-            print(rows)
             return [self._row_to_match(r) for r in rows]
         finally:
             cur.close()
