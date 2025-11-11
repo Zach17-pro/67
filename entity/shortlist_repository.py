@@ -78,16 +78,8 @@ class ShortlistRepository:
         try:
             sql = """
                 SELECT 
-                    s.shortlist_id,
-                    s.csr_user_id,
-                    s.request_id,
-                    s.notes,
-                    s.added_at,
-                    r.title,
-                    r.description,
-                    r.status,
-                    r.category_id,
-                    r.created_at
+                    s.shortlist_id, s.csr_user_id, s.request_id, s.notes, s.added_at, r.title,
+                    r.description, r.status, r.category_id, r.created_at
                 FROM shortlist s
                 JOIN request r ON s.request_id = r.request_id
                 WHERE s.csr_user_id = %s

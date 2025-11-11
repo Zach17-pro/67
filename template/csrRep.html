@@ -64,39 +64,14 @@
       </div>
 
       <!-- View Shortlist Section -->
-      <div id="shortlistSelection" class="section active">
-        <div class="filter-row">
-          <div>
-            <label for="">Search</label>
-            <input type="text" id="" oninput="loadMyShortlist()" placeholder="Search by title, description, notes" />
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>title</th>
-                <th>location</th>
-                <th>status</th>
-                <th>action</th>
-              </tr>
-            </thead>
-            <tbody id="userTableBody">
-              <tr><td colspan="4">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-
-      <!-- Active Request Section -->
-      <div id="activeRequestSection" class="section">
+       <div id="shortlistSelection" class="section active">
         
         <div class="filter-row">
           <div>
-            <label for="filterSearch">Search</label>
-            <input type="text" id="filterSearch" oninput="loadActiveRequest()" placeholder="Search by title, description, notes" />
+            <label for="filterSearch3">Search</label>
+            <input type="text" id="filterSearch3" oninput="loadMyShortlist()" placeholder="Search by title, description, notes" />
           </div>
-          <button class="btn secondary" onclick="resetActiveRequestFilters()">Reset</button>
+          <button class="btn secondary" onclick="resetAllFilters()">Reset</button>
         </div>
 
         <table>
@@ -109,20 +84,51 @@
               <th>action</th>
             </tr>
           </thead>
-          <tbody id="profileTableBody">
+          <tbody id="shortlistBody">
+            <tr><td colspan="4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- Active Request Section -->
+      <div id="activeRequestSection" class="section">
+        
+        <div class="filter-row">
+          <div>
+            <label for="filterSearch">Search</label>
+            <input type="text" id="filterSearch" oninput="loadActiveRequest()" placeholder="Search by title, description, notes" />
+          </div>
+          <button class="btn secondary" onclick="resetAllFilters()">Reset</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>title</th>
+              <th>location</th>
+              <th>status</th>
+              <th>action</th>
+            </tr>
+          </thead>
+          <tbody id="requestBody">
             <tr><td colspan="4">Loading...</td></tr>
           </tbody>
         </table>
       </div>
     <!-- end of div.card -->
-    </div>
+  
     
+
     <div id="pastMatchSection" class="section">
+        
         <div class="filter-row">
           <div>
-            <label for="filterSearch">Search</label>
-            <input type="text" id="filterSearch" oninput="loadPastMatches()" placeholder="Search by title, description, notes" />
+            <label for="filterSearch2">Search</label>
+            <input type="text" id="filterSearch2" oninput="loadPastMatches()" placeholder="Search by title, description, notes" />
           </div>
+          <button class="btn secondary" onclick="resetAllFilters()">Reset</button>
         </div>
 
         <table>
@@ -139,6 +145,8 @@
             <tr><td colspan="4">Loading...</td></tr>
           </tbody>
         </table>
+      </div>
+    <!-- end of div.card -->
     </div>
 
     <!-- View Request Modal -->
@@ -196,22 +204,11 @@
         }
       });
 
-      function cancelAction() {
-        document.getElementById('actionSelect').value = '';
-        document.querySelectorAll('#shortlistSelection .form-container').forEach(f => f.classList.remove('active'));
-        document.getElementById('createUsername').value = '';
-        document.getElementById('createPassword').value = '';
-        document.getElementById('updateId').value = '';
-        document.getElementById('updateUsername').value = '';
-        document.getElementById('updatePassword').value = '';
-        document.getElementById('deleteId').value = '';
-      }
 
       document.getElementById('viewBtn').addEventListener('click', function() {
         document.getElementById('viewModal').classList.add('active');
         loadAllUsers();
       });
-
 
       function closeModal() {
         document.getElementById('viewModal').classList.remove('active');
@@ -222,7 +219,6 @@
       });
 
       
-
       // Active Request functionality
       document.getElementById('profileActionSelect').addEventListener('change', function() {
         document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
@@ -231,19 +227,6 @@
         }
       });
 
-
-      function cancelProfileAction() {
-        document.getElementById('profileActionSelect').value = '';
-        document.querySelectorAll('#activeRequestSection .form-container').forEach(f => f.classList.remove('active'));
-        document.getElementById('profileUpdateId').value = '';
-        document.getElementById('profileFullName').value = '';
-        document.getElementById('profileEmail').value = '';
-
-        document.getElementById('createProfileUsername').value = '';
-        document.getElementById('createProfileFullName').value = '';
-        document.getElementById('createProfileEmail').value = '';
-        document.getElementById('deleteProfileId').value = '';
-      }
 
       async function loadSelectedRequest(request_id) {
         try {
@@ -340,77 +323,6 @@
         }
       }
 
-      // User Accounts CRUD
-      async function submitCreate() {
-        const username = document.getElementById('createUsername').value.trim();
-        const password = document.getElementById('createPassword').value;
-        const role = document.getElementById('createRole').value;
-        
-        if (!username || !password) {
-          alert('Please enter both username and password');
-          return;
-        }
-
-        try {
-          await callApi(api.create, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, role })
-          });
-          alert('User created successfully!');
-          cancelAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      async function submitUpdate() {
-        const id = document.getElementById('updateId').value.trim();
-        const username = document.getElementById('updateUsername').value.trim();
-        const password = document.getElementById('updatePassword').value;
-        const role = document.getElementById('updateRole').value;
-
-        if (!id) {
-          alert('Please enter a user ID');
-          return;
-        }
-
-        try {
-          await callApi(api.update, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, username, password, role })
-          });
-          alert('User updated successfully!');
-          cancelAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      async function submitDelete() {
-        const id = document.getElementById('deleteId').value.trim();
-
-        if (!id) {
-          alert('Please enter a user ID');
-          return;
-        }
-
-        if (!confirm('Delete user ID ' + id + '?')) return;
-
-        try {
-          await callApi(api.delete, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-          });
-          alert('User deleted successfully!');
-          cancelAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
       async function getUserId() {
       try {
         const url = new URL('/userId', location.origin);
@@ -424,7 +336,7 @@
 
       async function loadMyShortlist() {
         try {
-          const searchTerm = document.getElementById('filterSearch').value.trim().toLowerCase() || '';
+          const searchTerm = document.getElementById('filterSearch3').value.trim().toLowerCase() || '';
           const data = await getUserId(); 
           value = typeof data === 'object' && data !== null
           ? (data.id ?? '')
@@ -448,7 +360,7 @@
       }
 
       function renderShortlist(data) {
-        const tbody = document.getElementById('userTableBody');
+        const tbody = document.getElementById('shortlistBody');
         tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
@@ -472,19 +384,6 @@
         });
       }
 
-      function editUser(id, username, role) {
-        closeModal();
-        document.getElementById('sectionSelect').value = 'accounts';
-        document.getElementById('shortlistSelection').classList.add('active');
-        document.getElementById('activeRequestSection').classList.remove('active');
-        document.getElementById('actionSelect').value = 'update';
-        document.getElementById('updateForm').classList.add('active');
-        document.getElementById('updateId').value = id;
-        document.getElementById('updateUsername').value = username;
-        document.getElementById('updatePassword').value = '';
-        document.getElementById('updateRole').value = role;
-      }
-
 
       async function quickDelete(id) {
         if (!confirm('Delete Request ID ' + id + '?')) return;
@@ -497,94 +396,6 @@
           });
           alert('Request deleted successfully!');
           loadMyShortlist();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      // Create new user profile
-      async function submitProfileCreate() {
-        const username = document.getElementById('createProfileUsername').value.trim();
-        const full_name = document.getElementById('createProfileFullName').value.trim();
-        const email = document.getElementById('createProfileEmail').value.trim();
-
-        if (!username || !full_name) {
-          alert('Username and full name are required');
-          return;
-        }
-
-        try {
-          await callApi(api.profileCreate, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, full_name, email })
-          });
-          alert('Profile created successfully!');
-          cancelProfileAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      // Active Request CRUD
-      async function submitProfileUpdate() {
-        const id = document.getElementById('profileUpdateId').value.trim();
-        const fullName = document.getElementById('profileFullName').value.trim();
-        const email = document.getElementById('profileEmail').value.trim();
-
-        if (!id) {
-          alert('Please enter a user ID');
-          return;
-        }
-
-        try {
-          await callApi(api.profileUpdate, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, full_name: fullName, email })
-          });
-          alert('Profile updated successfully!');
-          cancelProfileAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      // Delete user profile
-      async function submitProfileDelete() {
-        const id = document.getElementById('deleteProfileId').value.trim();
-
-        if (!id) {
-          alert('Please enter a user profile ID');
-          return;
-        }
-
-        if (!confirm('Delete user profile ID ' + id + '?')) return;
-
-        try {
-          await callApi(api.profileDelete, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-          });
-          alert('Profile deleted successfully!');
-          cancelProfileAction();
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-
-      async function quickProfileDelete(id) {
-        if (!confirm('Delete user ID ' + id + '?')) return;
-        
-        try {
-          await callApi(api.delete, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-          });
-          alert('User Profile deleted successfully!');
-          loadActiveRequest();
         } catch (e) {
           alert(e.message);
         }
@@ -613,10 +424,10 @@
 
       async function loadPastMatches() {
         try {
-            const searchTerm = document.getElementById('filterSearch').value.trim() || '';
+            const searchTerm = document.getElementById('filterSearch2').value.trim() || '';
             const userData = await getUserId(); 
             // Call API to get past matches (Completed requests)
-            const data3 = await callApi(`/api/pin/matches/search?csr_user_id=${userData.id}&keyword=${encodeURIComponent(searchTerm)}`,{ method: 'GET' });
+            const data3 = await callApi(`/api/pin/matches/complete?csr_user_id=${userData.id}&keyword=${encodeURIComponent(searchTerm)}`,{ method: 'GET' });
             console.log(data3)
             allPastMatches = data3 || [];
             renderPastMatches(allPastMatches);
@@ -626,18 +437,23 @@
         }
     }
 
-      
+      async function resetAllFilters() {
+        const shortlistSearch = document.getElementById('filterSearch3');
+        const activeSearch = document.getElementById('filterSearch');
+        const pastMatchesSearch = document.getElementById('filterSearch2');
 
-      function resetActiveRequestFilters() {
-        // Clear the search field
-        const searchInput = document.getElementById('filterSearch');
-        if (searchInput) searchInput.value = '';
+        if (shortlistSearch) shortlistSearch.value = '';
+        if (activeSearch) activeSearch.value = '';
+        if (pastMatchesSearch) pastMatchesSearch.value = '';
 
-        // Reload the active request table
-        loadActiveRequest();
+        try {
+          await loadMyShortlist();
+          await loadActiveRequest();
+          await loadPastMatches();
+        } catch (e) {
+          console.error("Error reloading data:", e);
+        }
       }
-
-
 
       function applyProfileFilters() {
         const searchTerm = document.getElementById('profileFilterSearch').value.trim().toLowerCase();
@@ -657,7 +473,7 @@
       }
 
       function renderActiveRequests(data) {
-        const tbody = document.getElementById('profileTableBody');
+        const tbody = document.getElementById('requestBody');
         tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
@@ -681,16 +497,12 @@
         });
       }
 
-      function editProfile(id, fullName, email) {
+      function editProfile() {
         closeProfilesModal();
         document.getElementById('sectionSelect').value = 'profiles';
         document.getElementById('shortlistSelection').classList.remove('active');
         document.getElementById('activeRequestSection').classList.add('active');
         document.getElementById('profileActionSelect').value = 'updateProfile';
-        document.getElementById('updateProfileForm').classList.add('active');
-        document.getElementById('profileUpdateId').value = id;
-        document.getElementById('profileFullName').value = fullName;
-        document.getElementById('profileEmail').value = email;
       }
 
       function escapeHtml(s) {
@@ -702,8 +514,6 @@
       function escapeJs(s) {
         return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
       }
-
-        
 
 
       async function toggleShortlist(requestId) {
@@ -744,12 +554,11 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${escapeHtml(row.request_id)}</td>
-            <td>${escapeHtml(row.title)}</td>
+            <td>${escapeHtml(row.request_title)}</td>
             <td>${escapeHtml(row.location)}</td>
             <td>${escapeHtml(row.status)}</td>
             <td class="table-actions">
               <button class="btn" onclick="openRequestModal(${row.request_id})">View</button>
-              <button class="btn secondary" onclick="undoMatch(${row.match_id})">Undo</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -757,25 +566,13 @@
         }
 
 
-
-      window.cancelAction = cancelAction;
-      window.submitCreate = submitCreate;
-      window.submitUpdate = submitUpdate;
-      window.submitDelete = submitDelete;
       window.closeModal = closeModal;
       window.loadMyShortlist = loadMyShortlist;
       window.applyFilters = applyFilters;
-      window.editUser = editUser;
       window.quickDelete = quickDelete;
-      window.cancelProfileAction = cancelProfileAction;
-      window.submitProfileCreate = submitProfileCreate;
-      window.submitProfileDelete = submitProfileDelete;
-      window.submitProfileUpdate = submitProfileUpdate;
-      window.closeProfilesModal = closeProfilesModal;
       window.loadActiveRequest = loadActiveRequest;
       window.applyProfileFilters = applyProfileFilters;
       window.editProfile = editProfile;
-      window.quickProfileDelete = quickProfileDelete;
       window.toggleShortlist = toggleShortlist;
     </script>
   </body>
