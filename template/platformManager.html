@@ -35,11 +35,14 @@
     .cancel-btn:hover { background: #6b7280; }
     .add-btn { background: #e5e7eb; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; width: 100%; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); margin-top: 16px; }
     .add-btn:hover { background: #e5e7eb79; }
-    .new-category-form { display: none; margin-top: 16px; background: #eff6ff; padding: 20px; border-radius: 12px; border: 2px solid #dbeafe; }
-    .new-category-form input { width: 100%; padding: 12px 16px; border: 2px solid #bfdbfe; border-radius: 10px; margin-bottom: 12px; font-size: 15px; background: white; }
-    .new-category-form input:focus { outline: none; border-color: #667eea; }
-    .confirm-btn { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; }
-    .confirm-btn:hover { background: #5568d3; }
+    .new-category-form { display: none; margin-top: 16px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); animation: formGlow 0.3s ease; }
+    @keyframes formGlow { from { box-shadow: 0 0 0 0px rgba(102, 126, 234, 0); } to { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); } }
+    .new-category-form input { width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 12px; font-size: 15px; background: white; }
+    .new-category-form input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    .confirm-btn { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; opacity: 0.95; transition: all 0.2s ease; }
+    .confirm-btn:hover { background: #5568d3; opacity: 1; }
+    .view-all-btn { display: block; margin: 16px 0 0 0; padding: 14px; border: none; background: #e5e7eb; color: #374151; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; transition: background 0.2s ease; opacity: 0.85; }
+    .view-all-btn:hover { background: #d1d5db; opacity: 1; }
 </style>
 </head>
 <body>
@@ -60,6 +63,8 @@
     </div>
 
     <div id="categories" class="category-list">Loading categories...</div>
+    
+    <button id="viewAllBtn" class="view-all-btn" onclick="toggleViewAll()" style="display: none;">View All</button>
 
     <!-- Add Category -->
     <button class="add-btn" onclick="toggleNewCategory()"><img src="https://img.icons8.com/?size=50&id=3220&format=png&color=000000" alt="Add" width="16" height="16"></button>
@@ -71,35 +76,76 @@
 </div>
 
 <script>
+let allCategories = [];
+let showingAll = false;
+
 async function loadCategories() {
     try {
         const res = await fetch('/api/platform_manager');
         if (!res.ok) throw new Error('Failed to fetch categories');
-        const categories = await res.json();
-        const container = document.getElementById('categories');
-        container.innerHTML = '';
-
-        if (!categories || categories.length === 0) {
-            container.innerHTML = '<div class="category-item">No categories found</div>';
-            return;
-        }
-
-        categories.forEach(cat => {
-            const div = document.createElement('div');
-            div.className = 'category-item';
-            div.dataset.id = cat.id;
-            div.innerHTML = `
-                <span>${cat.name}</span>
-                <div class="actions">
-                    <button class="edit-btn" onclick="startInlineEdit(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')">Edit</button>
-                    <button class="delete-btn" onclick="deleteCategory(${cat.id})">Delete</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
+        allCategories = await res.json();
+        renderCategories(allCategories);
     } catch (err) {
         console.error('Error loading categories:', err);
         document.getElementById('categories').innerHTML = '<div class="category-item">Error loading categories</div>';
+    }
+}
+
+function renderCategories(list) {
+    const container = document.getElementById('categories');
+    container.innerHTML = '';
+
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div class="category-item">No categories found</div>';
+        document.getElementById('viewAllBtn').style.display = 'none';
+        return;
+    }
+
+    const visible = showingAll ? list : list.slice(0, 3);
+    visible.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'category-item';
+        div.dataset.id = cat.id;
+        div.innerHTML = `
+            <span>${cat.name}</span>
+            <div class="actions">
+                <button class="edit-btn" onclick="startInlineEdit(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')">Update</button>
+                <button class="delete-btn" onclick="deleteCategory(${cat.id})">Delete</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    const viewBtn = document.getElementById('viewAllBtn');
+    if (list.length > 3) {
+        viewBtn.textContent = showingAll ? 'Show Less ▲' : `View All (${list.length}) ▼`;
+        viewBtn.style.display = 'block';
+    } else {
+        viewBtn.style.display = 'none';
+    }
+}
+
+function toggleViewAll() {
+    showingAll = !showingAll;
+    renderCategories(allCategories);
+}
+
+function searchCategories() {
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allCategories.filter(cat => cat.name.toLowerCase().includes(term));
+    renderCategories(filtered);
+
+    // Show "not found" message if empty
+    if (filtered.length === 0) {
+        const container = document.getElementById('categories');
+        const msg = document.createElement('div');
+        msg.id = 'notFoundMsg';
+        msg.className = 'category-item';
+        msg.style.justifyContent = 'center';
+        msg.style.color = '#6b7280';
+        msg.style.fontStyle = 'italic';
+        msg.textContent = 'Category not found';
+        container.appendChild(msg);
     }
 }
 
@@ -114,6 +160,7 @@ function startInlineEdit(id, currentName) {
         <button class="save-btn" onclick="saveEdit(${id})">Save</button>
         <button class="cancel-btn" onclick="cancelEdit(${id}, '${currentName.replace(/'/g, "\\'")}')">Cancel</button>
     `;
+    document.getElementById(`editInput-${id}`).focus();
 }
 
 async function saveEdit(id) {
@@ -128,11 +175,8 @@ async function saveEdit(id) {
             body: JSON.stringify({ id: id, category_name: newName })
         });
         const data = await res.json();
-        if (data.success) {
-            loadCategories();
-        } else {
-            alert(data.error || 'Error updating category');
-        }
+        if (data.success) loadCategories();
+        else alert(data.error || 'Error updating category');
     } catch (err) {
         console.error('Error updating category:', err);
         alert('Error updating category');
@@ -147,37 +191,6 @@ function cancelEdit(id, oldName) {
         <button class="edit-btn" onclick="startInlineEdit(${id}, '${oldName.replace(/'/g, "\\'")}')">Edit</button>
         <button class="delete-btn" onclick="deleteCategory(${id})">Delete</button>
     `;
-}
-
-function searchCategories() {
-    const term = document.getElementById('searchInput').value.toLowerCase();
-    const items = document.querySelectorAll('.category-item');
-    let visibleCount = 0;
-
-    items.forEach(item => {
-        const name = item.querySelector('span').textContent.toLowerCase();
-        if (name.includes(term)) {
-            item.style.display = 'flex';
-            visibleCount++;
-        } else {
-            item.style.display = 'none';
-        }
-    });
-
-    // Remove existing "not found" message if any
-    const existingMsg = document.getElementById('notFoundMsg');
-    if (existingMsg) existingMsg.remove();
-
-    // If nothing matches, show a friendly message
-    if (visibleCount === 0) {
-        const msg = document.createElement('div');
-        msg.id = 'notFoundMsg';
-        msg.className = 'category-item';
-        msg.style.justifyContent = 'center';
-        msg.style.color = '#6b7280';
-        msg.textContent = 'Category not found';
-        document.getElementById('categories').appendChild(msg);
-    }
 }
 
 function toggleNewCategory() {
@@ -218,11 +231,8 @@ async function deleteCategory(id) {
             body: JSON.stringify({ id: id })
         });
         const data = await res.json();
-        if (data.success) {
-            loadCategories();
-        } else {
-            alert(data.error || 'Error deleting category');
-        }
+        if (data.success) loadCategories();
+        else alert(data.error || 'Error deleting category');
     } catch (err) {
         console.error('Error deleting category:', err);
         alert('Error deleting category');
@@ -231,5 +241,6 @@ async function deleteCategory(id) {
 
 document.addEventListener('DOMContentLoaded', loadCategories);
 </script>
+
 </body>
 </html>
