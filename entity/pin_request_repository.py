@@ -78,23 +78,23 @@ class RequestRepository:
         # Return full row
         return self.get_request_by_id(new_id)
     
-    def get_increment_request_view(self, request_id: int):
-        try:
-            cur = self.db.cursor()
-            cur.execute(
-                """
-                UPDATE request
-                SET view_count = view_count + 1
-                WHERE request_id = %s
-                AND status = 'Open' OR status = 'In Progress';
-                """,
-                (request_id, ),
-            )
-            self.db.commit()
-            cur.close()
-            return True
-        except Exception as e:
-            return False
+    # def get_increment_request_view(self, request_id: int):
+    #     try:
+    #         cur = self.db.cursor()
+    #         cur.execute(
+    #             """
+    #             UPDATE request
+    #             SET view_count = view_count + 1
+    #             WHERE request_id = %s
+    #             AND status = 'Open' OR status = 'In Progress';
+    #             """,
+    #             (request_id, ),
+    #         )
+    #         self.db.commit()
+    #         cur.close()
+    #         return True
+    #     except Exception as e:
+    #         return False
 
 
     # ---------- utility: get by id (scoped or not) ----------
@@ -106,25 +106,52 @@ class RequestRepository:
         if pin_user_id is None:
             cur.execute(
                 """
-                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
+                SELECT
+                r.*,
+                s.*,
+                COALESCE(sl.cnt, 0) AS shortlist_count,
+                COALESCE(rv.cnt, 0) AS view_count
                 FROM request r
-                LEFT JOIN service_category s ON s.category_id = r.category_id
-                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
-                WHERE r.request_id = %s
-                GROUP BY r.request_id
+                LEFT JOIN service_category s
+                ON s.category_id = r.category_id
+                LEFT JOIN (
+                SELECT request_id, COUNT(*) AS cnt
+                FROM shortlist
+                GROUP BY request_id
+                ) sl ON sl.request_id = r.request_id
+                LEFT JOIN (
+                SELECT request_id, COUNT(*) AS cnt
+                FROM request_view
+                GROUP BY request_id
+                ) rv ON rv.request_id = r.request_id
+                WHERE r.request_id = %s;
                 """,
                 (request_id,),
             )
         else:
             cur.execute(
                 """
-                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
+                SELECT
+                r.*,
+                s.*,
+                COALESCE(sl.cnt, 0) AS shortlist_count,
+                COALESCE(rv.cnt, 0) AS view_count
                 FROM request r
-                LEFT JOIN service_category s ON s.category_id = r.category_id
-                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
-                WHERE r.request_id = %s AND r.pin_user_id = %s
-                GROUP BY r.request_id
-                """,
+                LEFT JOIN service_category s
+                ON s.category_id = r.category_id
+                LEFT JOIN (
+                SELECT request_id, COUNT(*) AS cnt
+                FROM shortlist
+                GROUP BY request_id
+                ) sl ON sl.request_id = r.request_id
+                LEFT JOIN (
+                SELECT request_id, COUNT(*) AS cnt
+                FROM request_view
+                GROUP BY request_id
+                ) rv ON rv.request_id = r.request_id
+                WHERE r.request_id = %s AND r.pin_user_id = %s;
+                """
+                ,
                 (request_id, pin_user_id),
             )
         row = cur.fetchone()
@@ -139,28 +166,44 @@ class RequestRepository:
         status: Optional[str] = None,
         order_desc: bool = True,
     ) -> List[Request]:
-        """
-        Returns all requests for a PIN (optionally filtered by status).
-        """
-        params: List[Any] = [pin_user_id]
-        sql = """
-                SELECT r.*, s.*, COALESCE(COUNT(sl.request_id), 0) AS shortlist_count
-                FROM request r
-                LEFT JOIN service_category s ON s.category_id = r.category_id
-                LEFT JOIN shortlist sl ON sl.request_id = r.request_id
-                WHERE r.pin_user_id = %s
-                GROUP BY r.request_id
-                """
-        if status:
-            sql += " AND status = %s"
-            params.append(status)
-        sql += " ORDER BY created_at " + ("DESC" if order_desc else "ASC")
-
-        cur = self.db.cursor(dictionary=True)
-        cur.execute(sql, tuple(params))
-        rows = cur.fetchall()
-        cur.close()
-        return [self._row_to_request(r) for r in rows]
+        try:
+            """
+            Returns all requests for a PIN (optionally filtered by status).
+            """
+            params: List[Any] = [pin_user_id]
+            sql = """
+            SELECT
+            r.*,
+            s.*,
+            COALESCE(sl.cnt, 0) AS shortlist_count,
+            COALESCE(rv.cnt, 0) AS view_count
+            FROM request r
+            LEFT JOIN service_category s
+            ON s.category_id = r.category_id
+            LEFT JOIN (
+            SELECT request_id, COUNT(*) AS cnt
+            FROM shortlist
+            GROUP BY request_id
+            ) sl ON sl.request_id = r.request_id
+            LEFT JOIN (
+            SELECT request_id, COUNT(*) AS cnt
+            FROM request_view
+            GROUP BY request_id
+            ) rv ON rv.request_id = r.request_id
+            WHERE r.pin_user_id = %s
+            """
+            params = [pin_user_id]
+            if status:
+                sql += " AND r.status = %s"
+                params.append(status)
+            sql += " ORDER BY r.created_at " + ("DESC" if order_desc else "ASC")            
+            cur = self.db.cursor(dictionary=True)
+            cur.execute(sql, tuple(params))
+            rows = cur.fetchall()
+            cur.close()
+            return [self._row_to_request(r) for r in rows]
+        except Exception as e:
+            print(str(e))
 
     # ---------- #25: Update my request ----------
     def update_request(
@@ -291,13 +334,13 @@ class RequestRepository:
         """
         sql = """
             SELECT request_id, pin_user_id, title, description, status,
-                   created_at, updated_at, view_count, shortlist_count,
+                   created_at, updated_at, shortlist_count,
                    category_id, location
             FROM request
             WHERE pin_user_id = %s
         """
         params: List[Any] = [pin_user_id]
-
+    
         if keyword:
             sql += " AND (title LIKE %s OR description LIKE %s)"
             like = f"%{keyword}%"
@@ -343,10 +386,11 @@ class RequestRepository:
         Search a PIN's requests using common filters.
         """
         sql = f"""
-            SELECT request_id, pin_user_id, title, description, status,
-                   created_at, updated_at, view_count, shortlist_count,
-                   category_id, location
-            FROM request 
+            SELECT r.request_id, r.pin_user_id, r.title, r.description, r.status,
+                   r.created_at, r.updated_at, r.shortlist_count,
+                   r.category_id, r.location, COALESCE(COUNT(rv.view_id), 0) AS view_count
+            FROM request r
+            LEFT JOIN request_view AS rv ON rv.request_id = r.request_id
             Where
         """
 
@@ -363,11 +407,11 @@ class RequestRepository:
                 params.append(status)
                 
         print(query)
-        sql += " AND (request.title LIKE %s OR request.description LIKE %s)"
+        sql += " AND (r.title LIKE %s OR r.description LIKE %s)"
         params.append(f"%{query}%")
         params.append(f"%{query}%")
 
-        sql += " ORDER BY created_at " + ("DESC" if order_desc else "ASC")
+        sql += " GROUP BY r.request_id ORDER BY created_at " + ("DESC" if order_desc else "ASC")
         
 
         cur = self.db.cursor(dictionary=True)

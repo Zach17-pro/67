@@ -7,6 +7,7 @@ from entity.pin_request import Request
 from entity.pin_request_repository import RequestRepository
 from entity.match_repository import MatchRepository
 from utility.request_validation import RequestValidation
+from entity.request_view_repository import RequestViewRepository;
 
 ALLOWED_STATUSES = {"Open", "In Progress", "Completed", "Cancelled"} 
 
@@ -18,12 +19,13 @@ class SearchPinRequestController:
         return self.pin_req_repo.search_requests_by_status(status = ('Open', 'In Progress'), query=search)
 
 class ReadRequestController:
-    def __init__(self, request_repo):
+    def __init__(self, request_repo, view_repo: RequestViewRepository):
         self.request_repo = request_repo
+        self.view_repo = view_repo
 
     def read_request(self, *, request_id: int):
         RequestValidation._require_positive_id(request_id, "pin_user_id")
-        self.request_repo.get_increment_request_view(request_id)
+        self.view_repo.save_view(request_id, datetime.now())
         return self.request_repo.get_request_by_id(request_id)
 
 class CreatePinRequestController:
@@ -58,7 +60,7 @@ class CreatePinRequestController:
 
     # -------- #24: View my requests --------
 class ListMyPinRequestsController:
-    def __init__(self, request_repo, match_repo: Optional[object] = None):
+    def __init__(self, request_repo: RequestRepository, match_repo: Optional[object] = None):
         self.request_repo = request_repo
         self.match_repo = match_repo  # unused here but kept for parity  # [web:44][web:50]
 

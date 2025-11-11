@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from entity.pin_request_repository import RequestRepository
 from entity.match_repository import MatchRepository
+from entity.request_view_repository import RequestViewRepository
 from control.request_controller import *
 
 pin_req_api = Blueprint("pin_request_api", __name__, url_prefix="/api/requests")
@@ -19,6 +20,10 @@ def req_repo():
 def match_repo():
     db = current_app.config["DB"]
     return MatchRepository(db)
+
+def req_view_repo():
+    db = current_app.config["DB"]
+    return RequestViewRepository(db)
 
 
 # ---------- helpers ----------
@@ -42,7 +47,7 @@ def _list_to_dicts(items) -> List[Dict[str, Any]]:
 @pin_req_api.get("/<int:request_id>")
 def get_request_by_id(request_id: int):
     try:
-        controller = ReadRequestController(req_repo())
+        controller = ReadRequestController(req_repo(), req_view_repo())
         item = controller.read_request(request_id=request_id)
         if item is None:
             return jsonify({"error": "request not found"}), 404
