@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 from entity.pin_request_repository import RequestRepository
 from entity.match_repository import MatchRepository
 from entity.request_view_repository import RequestViewRepository
+from entity.service_category_repository import ServiceCategoryRepository
 from control.request_controller import *
 
 pin_req_api = Blueprint("pin_request_api", __name__, url_prefix="/api/requests")
@@ -24,6 +25,10 @@ def match_repo():
 def req_view_repo():
     db = current_app.config["DB"]
     return RequestViewRepository(db)
+
+def cat_repo():
+    db = current_app.config["DB"]
+    return ServiceCategoryRepository(db)
 
 
 # ---------- helpers ----------
@@ -47,7 +52,7 @@ def _list_to_dicts(items) -> List[Dict[str, Any]]:
 @pin_req_api.get("/<int:request_id>")
 def get_request_by_id(request_id: int):
     try:
-        controller = ReadRequestController(req_repo(), req_view_repo())
+        controller = ReadRequestController(req_repo(), req_view_repo(), cat_repo())
         item = controller.read_request(request_id=request_id)
         if item is None:
             return jsonify({"error": "request not found"}), 404
@@ -61,7 +66,7 @@ def search_active_requests():
         search = request.args.get("search", type=str)
         if not search:
             search = ""
-        controller = SearchPinRequestController(req_repo())
+        controller = SearchPinRequestController(req_repo(), cat_repo= cat_repo())
         items = controller.list_active_requests(search)
         return jsonify((items))
     except Exception as e:
@@ -75,7 +80,7 @@ def list_my_requests():
         if not pin_user_id:
             return jsonify({"error": "pin_user_id is required"}), 400
         status = request.args.get("status")  # optional
-        controller = ListMyPinRequestsController(req_repo(), match_repo())
+        controller = ListMyPinRequestsController(req_repo(), match_repo(), cat_repo())
         items = controller.list_my_requests(pin_user_id=pin_user_id, status=status)
         return jsonify(_list_to_dicts(items))
     except Exception as e:
@@ -113,7 +118,7 @@ def update_request():
         if not data.get("pin_user_id") or not data.get("request_id"):
             return jsonify({"error": "pin_user_id and request_id are required"}), 400
         print("CSr: ",data['csr_id'])
-        updated = UpdatePinRequestController(req_repo(), match_repo()).update_request(
+        updated = UpdatePinRequestController(req_repo(), match_repo(), cat_repo=cat_repo()).update_request(
             pin_user_id=int(data["pin_user_id"]),
             request_id=int(data["request_id"]),
             csr_user_id = to_int_or_none(data['csr_id']),
@@ -158,7 +163,7 @@ def search_my_requests():
         if not pin_user_id:
             return jsonify({"error": "pin_user_id is required"}), 400
 
-        items = SearchMyPinRequestsController(req_repo()).search_my_requests(
+        items = SearchMyPinRequestsController(req_repo(), cat_repo = cat_repo()).search_my_requests(
             pin_user_id=pin_user_id,
             keyword=request.args.get("keyword"),
             status=request.args.get("status"),

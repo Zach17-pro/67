@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from entity.pin_request import Request
 from entity.pin_request_repository import RequestRepository
+from entity.service_category_repository import ServiceCategoryRepository
 from entity.match_repository import MatchRepository
 from utility.request_validation import RequestValidation
 from entity.request_view_repository import RequestViewRepository;
@@ -12,21 +13,32 @@ from entity.request_view_repository import RequestViewRepository;
 ALLOWED_STATUSES = {"Open", "In Progress", "Completed", "Cancelled"} 
 
 class SearchPinRequestController:
-    def __init__(self, pin_req_repo: RequestRepository):
+    def __init__(self, pin_req_repo: RequestRepository, cat_repo: Optional[ServiceCategoryRepository]):
         self.pin_req_repo = pin_req_repo
+        self.cat_repo = cat_repo
     # 1. List active/open requests
     def list_active_requests(self, search) -> List[Dict[str, Any]]:
-        return self.pin_req_repo.search_requests_by_status(status = ('Open', 'In Progress'), query=search)
+        rows = self.pin_req_repo.search_requests_by_status(status = ('Open', 'In Progress'), query=search)
+
+        requests = [Request._row_to_request(row) for row in rows] 
+        for request in requests:
+            request.set_service_category(self.cat_repo.get_category(request.category_id))
+        return requests
 
 class ReadRequestController:
-    def __init__(self, request_repo, view_repo: RequestViewRepository):
+    def __init__(self, request_repo: RequestRepository, view_repo: RequestViewRepository, cat_repo: Optional[ServiceCategoryRepository]):
         self.request_repo = request_repo
+        self.cat_repo = cat_repo
         self.view_repo = view_repo
 
     def read_request(self, *, request_id: int):
+        
         RequestValidation._require_positive_id(request_id, "pin_user_id")
         self.view_repo.save_view(request_id, datetime.now())
-        return self.request_repo.get_request_by_id(request_id)
+        request = Request._row_to_request(self.request_repo.get_request_by_id(request_id))
+        request.set_service_category(self.cat_repo.get_category(request.category_id))
+    
+        return request
 
 class CreatePinRequestController:
     def __init__(self, request_repo, match_repo: Optional[object] = None):
@@ -50,18 +62,20 @@ class CreatePinRequestController:
         if category_id is not None:
             RequestValidation._require_positive_id(category_id, "category_id")  # [web:33][web:46]
 
-        return self.request_repo.create_request(
+        row = self.request_repo.create_request(
             pin_user_id=pin_user_id,
             title=title.strip(),
             description=description.strip(),
             category_id=category_id,
             location=location.strip(),
-        )  # [web:44][web:50]
+        ) 
+        return Request._row_to_request(row)
 
     # -------- #24: View my requests --------
 class ListMyPinRequestsController:
-    def __init__(self, request_repo: RequestRepository, match_repo: Optional[object] = None):
+    def __init__(self, request_repo: RequestRepository, match_repo: Optional[object] = None, cat_repo: Optional[ServiceCategoryRepository] = None):
         self.request_repo = request_repo
+        self.cat_repo = cat_repo
         self.match_repo = match_repo  # unused here but kept for parity  # [web:44][web:50]
 
     # -------- #24: View my requests --------
@@ -71,14 +85,19 @@ class ListMyPinRequestsController:
         RequestValidation._require_positive_id(pin_user_id, "pin_user_id")
         if status is not None:
             RequestValidation._require_status(status)
-        return self.request_repo.list_requests_by_pin(
+        rows = self.request_repo.list_requests_by_pin(
             pin_user_id=pin_user_id, status=status, order_desc=order_desc
-        )  # [web:44][web:50]
+        )  
+        requests = [Request._row_to_request(row) for row in rows]
+        for request in requests:
+            request.set_service_category(self.cat_repo.get_category(request.category_id))
+        return requests
 
     # -------- #25: Update my request --------
 class UpdatePinRequestController:
-    def __init__(self, request_repo, match_repo: Optional[MatchRepository] = None):
+    def __init__(self, request_repo, match_repo: Optional[MatchRepository] = None, cat_repo: Optional[ServiceCategoryRepository] = None):
         self.request_repo = request_repo
+        self.cat_repo = cat_repo
         self.match_repo = match_repo  # used here for ensure_completed_match  # [web:44][web:58]
 
     # -------- #25: Update my request --------
@@ -115,7 +134,7 @@ class UpdatePinRequestController:
             category_id=category_id,
             location=location.strip() if isinstance(location, str) else location,
             status=status,
-        )  # [web:44][web:50]
+        )  
     
         # If the request was (or is now) Completed, ensure a Completed match row exists.
         # NOTE: We use pin_user_id as a placeholder csr_user_id if none is known.
@@ -130,8 +149,11 @@ class UpdatePinRequestController:
             except Exception:
                 # Don't block the request update if match creation fails; surface via logs if desired.
                 pass  # [web:44][web:58]
-
-        return updated
+        request = Request._row_to_request(updated)
+        print(request)
+        request.set_service_category(self.cat_repo.get_category(request.category_id))
+        print("TEST")
+        return request
 
 
     # -------- #26: Delete my request --------
@@ -149,9 +171,10 @@ class DeleteMyPinRequestController:
 
     # -------- #27: Search my requests --------
 class SearchMyPinRequestsController:
-    def __init__(self, request_repo, match_repo: Optional[object] = None):
+    def __init__(self, request_repo, match_repo: Optional[object] = None, cat_repo:  Optional[ServiceCategoryRepository] = None):
         self.request_repo = request_repo
         self.match_repo = match_repo  
+        self.cat_repo = cat_repo
 
     # -------- #27: Search my requests --------
     def search_my_requests(
@@ -175,7 +198,7 @@ class SearchMyPinRequestsController:
         dt_to = RequestValidation._parse_dt(date_to) if date_to else None
         RequestValidation._require_dt_order(dt_from, dt_to)  # [web:51][web:48]
 
-        return self.request_repo.search_user_requests(
+        rows = self.request_repo.search_user_requests(
             pin_user_id=pin_user_id,
             keyword=(keyword.strip() if isinstance(keyword, str) and keyword.strip() else None),
             status=status,
@@ -184,5 +207,10 @@ class SearchMyPinRequestsController:
             date_to=dt_to,
             order_desc=order_desc,
         ) 
+
+        requests = [Request._row_to_request(row) for row in rows]
+        for request in requests:
+            request.set_service_category(self.cat_repo.get_category(request.category_id))
+        return requests
     
     

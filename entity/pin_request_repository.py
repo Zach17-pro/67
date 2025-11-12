@@ -32,24 +32,6 @@ class RequestRepository:
     def __init__(self, db):
         self.db = db
 
-    # ---------- helpers ----------
-    @staticmethod
-    def _row_to_request(row: Dict[str, Any]) -> Request:
-        return Request(
-            request_id=row["request_id"],
-            pin_user_id=row["pin_user_id"],
-            title=row["title"],
-            description=row["description"],
-            status=row["status"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            view_count=row["view_count"],
-            shortlist_count=row["shortlist_count"],
-            category_id=row.get("category_id"),
-            category_name=row.get("category_name"),
-            location=row["location"],
-        )
-
     # ---------- #23: Create a request ----------
     def create_request(
         self,
@@ -77,43 +59,18 @@ class RequestRepository:
         cur.close()
         # Return full row
         return self.get_request_by_id(new_id)
-    
-    # def get_increment_request_view(self, request_id: int):
-    #     try:
-    #         cur = self.db.cursor()
-    #         cur.execute(
-    #             """
-    #             UPDATE request
-    #             SET view_count = view_count + 1
-    #             WHERE request_id = %s
-    #             AND status = 'Open' OR status = 'In Progress';
-    #             """,
-    #             (request_id, ),
-    #         )
-    #         self.db.commit()
-    #         cur.close()
-    #         return True
-    #     except Exception as e:
-    #         return False
-
 
     # ---------- utility: get by id (scoped or not) ----------
     def get_request_by_id(self, request_id: int, pin_user_id: Optional[int] = None) -> Optional[Request]:
-        """
-        Fetch a single request. If pin_user_id is provided, enforce ownership.
-        """
         cur = self.db.cursor(dictionary=True)
         if pin_user_id is None:
             cur.execute(
                 """
                 SELECT
                 r.*,
-                s.*,
                 COALESCE(sl.cnt, 0) AS shortlist_count,
                 COALESCE(rv.cnt, 0) AS view_count
                 FROM request r
-                LEFT JOIN service_category s
-                ON s.category_id = r.category_id
                 LEFT JOIN (
                 SELECT request_id, COUNT(*) AS cnt
                 FROM shortlist
@@ -133,12 +90,9 @@ class RequestRepository:
                 """
                 SELECT
                 r.*,
-                s.*,
                 COALESCE(sl.cnt, 0) AS shortlist_count,
                 COALESCE(rv.cnt, 0) AS view_count
                 FROM request r
-                LEFT JOIN service_category s
-                ON s.category_id = r.category_id
                 LEFT JOIN (
                 SELECT request_id, COUNT(*) AS cnt
                 FROM shortlist
@@ -155,9 +109,8 @@ class RequestRepository:
                 (request_id, pin_user_id),
             )
         row = cur.fetchone()
-        print(row)
         cur.close()
-        return self._row_to_request(row) if row else None
+        return (row) if row else None
 
     # ---------- #24: View my requests ----------
     def list_requests_by_pin(
@@ -174,12 +127,9 @@ class RequestRepository:
             sql = """
             SELECT
             r.*,
-            s.*,
             COALESCE(sl.cnt, 0) AS shortlist_count,
             COALESCE(rv.cnt, 0) AS view_count
             FROM request r
-            LEFT JOIN service_category s
-            ON s.category_id = r.category_id
             LEFT JOIN (
             SELECT request_id, COUNT(*) AS cnt
             FROM shortlist
@@ -201,7 +151,7 @@ class RequestRepository:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
             cur.close()
-            return [self._row_to_request(r) for r in rows]
+            return [(r) for r in rows]
         except Exception as e:
             print(str(e))
 
@@ -364,7 +314,7 @@ class RequestRepository:
         cur.execute(sql, tuple(params))
         rows = cur.fetchall()
         cur.close()
-        return [self._row_to_request(r) for r in rows]
+        return [(r) for r in rows]
     
     def search_requests_by_status(
         self,
@@ -409,7 +359,7 @@ class RequestRepository:
         cur.execute(sql, tuple(params))
         rows = cur.fetchall()
         cur.close()
-        return [self._row_to_request(r) for r in rows]
+        return [(r) for r in rows]
 
 
     def count_created(self, frm: datetime, to: datetime) -> int:

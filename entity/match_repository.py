@@ -15,23 +15,6 @@ class MatchRepository:
     def __init__(self, db):
         self.db = db
 
-    # ---------- helpers ----------
-    @staticmethod
-    def _row_to_match(row: Dict[str, Any]) -> Match:
-        return Match(
-            match_id=row["match_id"],
-            request_id=row["request_id"],
-            csr_user_id=row["csr_user_id"],
-            pin_user_id=row["pin_user_id"],
-            service_date=row["service_date"],
-            completion_date=row.get("completion_date"),
-            status=row["status"],
-            request_title=row.get("request_title"),
-            category_id=row.get("category_id"),
-            category_name=row.get("category_name"),
-            location=row.get("location"),
-        )
-
     # ---------- fetch one ----------
     def get_by_id(self, match_id: int, pin_user_id: Optional[int] = None) -> Optional[Match]:
         """
@@ -57,7 +40,7 @@ class MatchRepository:
 
             cur.execute(base_sql, tuple(params))
             row = cur.fetchone()
-            return self._row_to_match(row) if row else None
+            return row
         finally:
             cur.close()
 
@@ -194,7 +177,7 @@ class MatchRepository:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
             print(rows)
-            return [self._row_to_match(r) for r in rows]
+            return rows
         finally:
             cur.close()
 
@@ -266,7 +249,7 @@ class MatchRepository:
         try:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
-            return [self._row_to_match(r) for r in rows]
+            return rows
         finally:
             cur.close()
 

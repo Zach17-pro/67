@@ -4,7 +4,9 @@ from datetime import datetime
 # User Account
 @dataclass
 class UserAccount:
+  id: int
   username: str
+  role: str
   password: str
 
 # User Profile
@@ -13,6 +15,6 @@ class UserProfile:
   id: int
   username: str
   full_name: str
-  role: str
   email: str
+  role: str
   created_at: datetime

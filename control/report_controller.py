@@ -64,7 +64,6 @@ class GetReportData:
         
 
     def _status_snapshot(self, frm, to) -> StatusSnapshot:
-        # snapshot “now”; for historical, add a history table
         rows = self.request_repo.status_snapshot(frm, to)
         lookup = {r["status"].lower(): r["count"] for r in rows}
         return StatusSnapshot(

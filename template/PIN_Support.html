@@ -136,7 +136,7 @@
       <div class="row">
         <div class="col-3">
           <label>Request ID
-            <input id="ud_id" type="number" placeholder="Select from table above" />
+            <input id="ud_id" type="number" placeholder="Select from table above" readonly/>
           </label>
         </div>
         <div class="col-3">
@@ -678,7 +678,7 @@
     const wrap = document.getElementById('pm_table_wrap');
     wrap.innerHTML = 'Searching...';
     try {
-      const url = new URL('/api/pin/matches/search', location.origin);
+      const url = new URL('/api/pin/matches/complete', location.origin);
       url.searchParams.set('pin_user_id', pin_user_id);
       if (keyword) url.searchParams.set('keyword', keyword);
       if (category_id) url.searchParams.set('category_id', category_id);
@@ -764,12 +764,12 @@
     const tr = rows.map(m => `
       <tr>
         <td>${m.match_id}</td>
-        <td>${escapeHtml(m.request_title || '')}</td>
+        <td>${escapeHtml(m.request.title || '')}</td>
         <td>${m.service_date || ''}</td>
         <td>${m.completion_date || ''}</td>
-        <td>${escapeHtml(m.status || '')}</td>
-        <td>${escapeHtml(m.category_name || 'No category selected')}</td>
-        <td>${escapeHtml(m.location || '')}</td>
+        <td>${escapeHtml(m.request.status || '')}</td>
+        <td>${escapeHtml(m.request.category.category_name || 'No category selected')}</td>
+        <td>${escapeHtml(m.request.location || '')}</td>
       </tr>
     `).join('');
     return `

@@ -259,7 +259,7 @@
               </dd>
 
               <dt>Category</dt>
-              <dd>${data.category_name ? data.category_name : "No Category Provided"}</dd>
+              <dd>${data.category.category_name ? data.category.category_name : "No Category Provided"}</dd>
 
               <dt>Location</dt>
               <dd>${escapeHtml(data.location)}</dd>
@@ -551,12 +551,12 @@
         data.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${escapeHtml(row.request_id)}</td>
-            <td>${escapeHtml(row.request_title)}</td>
-            <td>${escapeHtml(row.location)}</td>
-            <td>${escapeHtml(row.status)}</td>
+            <td>${escapeHtml(row.request.request_id)}</td>
+            <td>${escapeHtml(row.request.title)}</td>
+            <td>${escapeHtml(row.request.location)}</td>
+            <td>${escapeHtml(row.request.status)}</td>
             <td class="table-actions">
-              <button class="btn" onclick="openRequestModal(${row.request_id})">View</button>
+              <button class="btn" onclick="openRequestModal(${row.request.request_id})">View</button>
             </td>
           `;
           tbody.appendChild(tr);

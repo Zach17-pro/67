@@ -8,14 +8,23 @@ from datetime import datetime, date
 
 from entity.match_repository import MatchRepository
 from entity.pin_request_repository import RequestRepository
-from control.match_controller import MatchController
+from control.match_controller import ViewPastMatchController, SearchPastMatchController
+from entity.service_category_repository import ServiceCategoryRepository
 
 match_api = Blueprint("match_api", __name__, url_prefix="/api/pin/matches")
 
-def controller() -> MatchController:
+
+def match_repo():
     db = current_app.config["DB"]
-    repo = MatchRepository(db)
-    return MatchController(repo)
+    return MatchRepository(db)
+
+def req_repo():
+    db = current_app.config["DB"]
+    return RequestRepository(db)
+
+def cat_repo():
+    db = current_app.config["DB"]
+    return ServiceCategoryRepository(db)
 
 # ---------- helpers ----------
 def _match_to_dict(m) -> Dict[str, Any]:
@@ -86,7 +95,7 @@ def view_past_matches():
         attr, user_id = provided[0]
 
 
-        items = controller().view_past_matches(
+        items = ViewPastMatchController(match_repo(), req_repo=req_repo(), cat_repo=cat_repo()).view_past_matches(
             user_id=user_id,
             user_type=attr,
             category_id=request.args.get("category_id", type=int),
@@ -115,7 +124,7 @@ def search_past_matches():
 
         attr, user_id = provided[0]
 
-        items = controller().search_past_matches(
+        items = SearchPastMatchController(match_repo(), req_repo=req_repo(), cat_repo=cat_repo()).search_past_matches(
             user_id=user_id,
             user_type=attr,
             keyword=request.args.get("keyword",),
