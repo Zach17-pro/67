@@ -283,7 +283,9 @@ class RequestRepository:
             # plain cursor returns a tuple like (count,)
             dep_count = (cnt_row[0] if cnt_row else 0)
             if dep_count and dep_count > 0:
-                raise ValueError(f"Cannot delete: request has {dep_count} match(es). Cancel it instead.")
+                cur.execute("DELETE FROM `match` WHERE request_id = %s",
+                (request_id, ),
+            )
 
             # Proceed with deletion
             cur.execute(
@@ -297,17 +299,7 @@ class RequestRepository:
                 return None
 
             # Return a copy of the deleted item's key fields (your existing pattern)
-            return Request(
-                request_id=request_id,
-                pin_user_id=pin_user_id,
-                title=existing.title,
-                description=existing.description,
-                status=existing.status,
-                created_at=existing.created_at,
-                updated_at=existing.updated_at,
-                category_id=existing.category_id,
-                location=existing.location,
-            )
+            return True
         except Exception as e:
             # any other FK blocks
             print("Error:",str(e))

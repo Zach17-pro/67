@@ -138,20 +138,20 @@ class UpdatePinRequestController:
 class DeleteMyPinRequestController:
     def __init__(self, request_repo, match_repo: Optional[object] = None):
         self.request_repo = request_repo
-        self.match_repo = match_repo  # unused here but kept for parity  # [web:44][web:50]
+        self.match_repo = match_repo 
 
     # -------- #26: Delete my request --------
     def delete_request(self, *, pin_user_id: int, request_id: int) -> bool:
         RequestValidation._require_positive_id(pin_user_id, "pin_user_id")
         RequestValidation._require_positive_id(request_id, "request_id")
         deleted = self.request_repo.delete_request(request_id=request_id, pin_user_id=pin_user_id)
-        return deleted is not None  # [web:44][web:50]
+        return deleted is not None 
 
     # -------- #27: Search my requests --------
 class SearchMyPinRequestsController:
     def __init__(self, request_repo, match_repo: Optional[object] = None):
         self.request_repo = request_repo
-        self.match_repo = match_repo  # unused here but kept for parity  # [web:44][web:50]
+        self.match_repo = match_repo  
 
     # -------- #27: Search my requests --------
     def search_my_requests(
