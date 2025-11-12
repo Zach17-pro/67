@@ -77,7 +77,7 @@ class ListMyPinRequestsController:
 
     # -------- #25: Update my request --------
 class UpdatePinRequestController:
-    def __init__(self, request_repo, match_repo: Optional[object] = None):
+    def __init__(self, request_repo, match_repo: Optional[MatchRepository] = None):
         self.request_repo = request_repo
         self.match_repo = match_repo  # used here for ensure_completed_match  # [web:44][web:58]
 

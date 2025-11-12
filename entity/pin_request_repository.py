@@ -305,13 +305,12 @@ class RequestRepository:
                 status=existing.status,
                 created_at=existing.created_at,
                 updated_at=existing.updated_at,
-                view_count=existing.view_count,
-                shortlist_count=existing.shortlist_count,
                 category_id=existing.category_id,
                 location=existing.location,
             )
-        except db_errors.IntegrityError as e:
+        except Exception as e:
             # any other FK blocks
+            print("Error:",str(e))
             self.db.rollback()
             raise ValueError("Request cannot be deleted because it is referenced by other records.") from e
         finally:
