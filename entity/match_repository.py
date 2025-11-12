@@ -390,3 +390,70 @@ class MatchRepository:
             return n
         finally:
             cur.close()
+
+
+    def count_created(self, frm: datetime, to: datetime) -> int:
+        sql = "SELECT COUNT(*) FROM `match` WHERE service_date >= %s AND service_date < %s"
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm.date(), to.date()))
+            data = int(cur.fetchone()[0])
+            return data
+
+    def count_completed(self, frm: datetime, to: datetime) -> int:
+        sql = """
+            SELECT COUNT(*) FROM `match`
+            WHERE completion_date IS NOT NULL
+              AND completion_date >= %s AND completion_date < %s
+        """
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm, to))
+            return int(cur.fetchone()[0])
+
+    def avg_time_to_completion(self, frm: datetime, to: datetime) -> Optional[float]:
+        sql = """
+            SELECT AVG(TIMESTAMPDIFF(SECOND, r.created_at, m.completion_date)) AS avg_secs
+            FROM `match` m
+            JOIN request r ON r.request_id = m.request_id
+            WHERE m.completion_date IS NOT NULL
+              AND m.completion_date >= %s AND m.completion_date < %s
+        """
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm, to))
+            row = cur.fetchone()
+            return float(row[0]) if row and row[0] is not None else None
+
+    def completion_trend_with_ma(self, frm: datetime, to: datetime, window: int = 7) -> List[Dict]:
+        sql = """
+        WITH daily AS (
+        SELECT DATE(m.completion_date) AS day, COUNT(*) AS completed
+        FROM `match` m
+        WHERE m.completion_date IS NOT NULL
+            AND m.completion_date >= %s AND m.completion_date < %s
+        GROUP BY DATE(m.completion_date)
+        ),
+        series AS (
+        WITH RECURSIVE dates AS (
+            SELECT DATE(%s) AS day
+            UNION ALL
+            SELECT day + INTERVAL 1 DAY
+            FROM dates
+            WHERE day + INTERVAL 1 DAY < DATE(%s)  -- end is exclusive
+        )
+        SELECT day FROM dates
+        )
+        SELECT s.day,
+            COALESCE(d.completed, 0) AS completed,
+            AVG(COALESCE(d.completed, 0)) OVER (
+                ORDER BY s.day
+                ROWS BETWEEN %s PRECEDING AND CURRENT ROW
+            ) AS ma
+        FROM series s
+        LEFT JOIN daily d ON d.day = s.day
+        ORDER BY s.day;
+        """
+        
+        # For MySQL, replace generate_series with a calendar table or recursive CTE and adjust casts.
+        with self.db.cursor(dictionary=True) as cur:
+            cur.execute(sql, (frm, to, frm, to, window - 1))
+            data = cur.fetchall()
+            return list(data)

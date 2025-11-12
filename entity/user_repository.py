@@ -13,6 +13,7 @@
 #10 As a user admin, I want to delete user profiles so that invalid records are removed.
 #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
 
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from entity.user import UserProfile, UserAccount
 
@@ -239,3 +240,30 @@ class UserRepository:
             return results
         except Exception as e:
             raise Exception(f"Error searching profiles: {e}")
+        
+    def count_new_csrs(self, frm: datetime, to: datetime) -> int:
+        sql = """
+            SELECT COUNT(*) FROM user
+            WHERE role = 'Csr_Rep' AND created_at >= %s AND created_at < %s
+        """
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm, to))
+            return int(cur.fetchone()[0])
+
+    def count_active_csrs(self, frm: datetime, to: datetime) -> int:
+        try:
+            sql = """
+                SELECT COUNT(DISTINCT csr_user_id) AS cnt FROM (
+                SELECT csr_user_id FROM shortlist
+                WHERE added_at >= %s AND added_at < %s
+                UNION ALL
+                SELECT csr_user_id FROM `match`
+                WHERE service_date >= %s AND service_date < %s
+                ) x
+            """
+            with self.db.cursor() as cur:
+                cur.execute(sql, (frm, to, frm.date(), to.date()))
+                data = int(cur.fetchone()[0])
+                return data
+        except Exception as e:
+            print("err:", str(e))

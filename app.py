@@ -24,6 +24,7 @@ from boundary.match_boundary import match_api
 from boundary.shortlist_boundary import csr_shortlist_api
 from boundary.admin_boundary import admin_api
 from boundary.user_boundary import user_api
+from boundary.report_boundary import report_page_api
 
 
 app.register_blueprint(auth_api)
@@ -35,6 +36,7 @@ app.register_blueprint(match_api)
 app.register_blueprint(csr_shortlist_api)
 app.register_blueprint(admin_api)
 app.register_blueprint(user_api)
+app.register_blueprint(report_page_api)
 
 
 if __name__ == '__main__':

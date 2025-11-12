@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Platform Manager | SixSeven</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f7fa; padding: 20px; }
@@ -43,6 +44,27 @@
     .confirm-btn:hover { background: #5568d3; opacity: 1; }
     .view-all-btn { display: block; margin: 16px 0 0 0; padding: 14px; border: none; background: #e5e7eb; color: #374151; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; transition: background 0.2s ease; opacity: 0.85; }
     .view-all-btn:hover { background: #d1d5db; opacity: 1; }
+    dialog::backdrop { background: rgba(0,0,0,0.35); }
+    dialog { border: none; border-radius: 8px; padding: 16px 16px 12px; max-width: 900px; width: 95vw; }
+    @media (max-width: 640px) {
+    dialog { width: 98vw; }
+    dialog section:first-of-type { grid-template-columns: 1fr !important; }}
+    .granularity-control {display: flex;align-items: center;gap: 10px;margin: 8px 0 12px;padding: 8px 10px;border: 1px solid #e6e6e6;border-radius: 8px;background: #fafafa;
+    }
+    .granularity-label {font-size: 12px;white-space: nowrap;
+    }
+    .granularity-select {appearance: none;           /* remove default styling for consistency */-webkit-appearance: none;-moz-appearance: none;position: relative;padding: 8px 32px 8px 10px; /* space for custom caret */border: 1px solid #d0d7de;border-radius: 6px;background:linear-gradient(180deg, #ffffff, #f6f8fa) padding-box,linear-gradient(180deg, #d0d7de, #c3c8ce) border-box;color: #111;font-size: 14px;line-height: 1.2;cursor: pointer;transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .granularity-select {background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path fill="%23666" d="M6 8 0 0h12z"/></svg>');background-repeat: no-repeat;background-position: right 10px center;background-size: 12px 8px;
+    }
+    .granularity-select:hover {border-color: #b6bec6;
+    }
+    .granularity-select:focus {outline: 2px solid transparent;border-color: #0969da;box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2);
+    }
+    @media (forced-colors: active) {.granularity-select:focus {outline: 1px solid CanvasText;box-shadow: none;}
+    }
+    @media (max-width: 480px) {.granularity-control {flex-wrap: wrap;gap: 6px 8px;}.granularity-select {width: 100%;}}
+
 </style>
 </head>
 <body>
@@ -50,7 +72,7 @@
     <div class="header">
         <h2>Platform Manager</h2>
         <div class="header-actions">
-            <button class="report-btn" onclick="window.location.href='/reports'">📊 Reports</button>
+            <button class="report-btn" id="openReports">📊 Reports</button>
             <button class="logout-btn" onclick="window.location.href='/logout'">🚪 Logout</button>
         </div>
     </div>
@@ -74,6 +96,105 @@
     </div>
     
 </div>
+
+<dialog id="reportsModal" aria-labelledby="reportsTitle">
+  <form method="dialog">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+      <h2 id="reportsTitle" style="margin:0;">Reports Dashboard</h2>
+      <button id="closeReports" aria-label="Close">✕</button>
+    </header>
+    <div class="granularity-control">
+        <label for="periodSelect" class="granularity-label">Granularity</label>
+        <select id="periodSelect" class="granularity-select">
+            <option value="1" selected>Daily</option>
+            <option value="7">Weekly</option>
+            <option value="30">Monthly</option>
+        </select>
+    </div>
+
+
+    <section style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;">
+      <div>
+        <div style="font-size:12px;color:#666;">From</div>
+        <div id="fromTs" style="font-weight:600;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#666;">To</div>
+        <div id="toTs" style="font-weight:600;"></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#666;">Active CSRs</div>
+        <div id="activeCsrs" style="font-weight:600;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#666;">New CSRs</div>
+        <div id="newCsrs" style="font-weight:600;"></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#666;">Requests Created</div>
+        <div id="requestsCreated" style="font-weight:600;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#666;">Request Views</div>
+        <div id="requestViews" style="font-weight:600;"></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#666;">Request Shortlists</div>
+        <div id="requestShortlists" style="font-weight:600;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#666;">Avg Time to Completion (days)</div>
+        <div id="avgTtc" style="font-weight:600;"></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#666;">Matches Created</div>
+        <div id="matchesCreated" style="font-weight:600;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#666;">Matches Completed</div>
+        <div id="matchesCompleted" style="font-weight:600;"></div>
+      </div>
+    </section>
+
+    <section style="margin-top:16px;">
+      <h3 style="margin:0 0 8px 0;">Status Snapshot</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <div>Open: <span id="statusOpen" style="font-weight:600;"></span></div>
+        <div>In Progress: <span id="statusInProgress" style="font-weight:600;"></span></div>
+        <div>Completed: <span id="statusCompleted" style="font-weight:600;"></span></div>
+        <div>Cancelled: <span id="statusCancelled" style="font-weight:600;"></span></div>
+      </div>
+    </section>
+
+    <section style="margin-top:16px;">
+      <h3 style="margin:0 0 8px 0;">By Location</h3>
+      <div style="max-height:260px;overflow:auto;border:1px solid #eee;border-radius:6px;padding:8px;margin-bottom:12px;">
+        <ul id="byLocationList" style="margin:0;padding-left:18px;"></ul>
+      </div>
+      <div style="height:320px;">
+        <canvas id="byLocationChart"></canvas>
+      </div>
+    </section>
+
+    <section style="margin-top:16px;">
+      <h3 style="margin:0 0 8px 0;">By Category</h3>
+      <div style="max-height:260px;overflow:auto;border:1px solid #eee;border-radius:6px;padding:8px;margin-bottom:12px;">
+        <ul id="byCategoryList" style="margin:0;padding-left:18px;"></ul>
+      </div>
+      <div style="height:320px;">
+        <canvas id="byCategoryChart"></canvas>
+      </div>
+    </section>
+
+    <footer style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
+      <button value="cancel">Close</button>
+    </footer>
+  </form>
+</dialog>
 
 <script>
 let allCategories = [];
@@ -231,6 +352,181 @@ async function deleteCategory(id) {
         alert('Error deleting category');
     }
 }
+
+
+// The provided dashboard data
+  const $ = (sel) => document.querySelector(sel);
+
+  // Number formatter for integers
+  const intFmt = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 });
+  // Number formatter for 2 decimals
+  const twoDec = new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Modal controls
+  const openBtn = $('#openReports');
+  const modal = $('#reportsModal');
+  const closeBtn = $('#closeReports');
+  
+
+  let byLocationChart; // chart instance for cleanup/re-init
+  let byCategoryChart;
+
+  function populateDashboard(data) {
+    $('#fromTs').textContent = data.from_ts;
+    $('#toTs').textContent = data.to_ts;
+
+    $('#activeCsrs').textContent = intFmt.format(data.active_csrs);
+    $('#newCsrs').textContent = intFmt.format(data.new_csrs);
+    $('#requestsCreated').textContent = intFmt.format(data.requests_created);
+    $('#requestViews').textContent = intFmt.format(data.request_views);
+    $('#requestShortlists').textContent = intFmt.format(data.request_shortlists);
+    $('#avgTtc').textContent = twoDec.format(data.avg_time_to_completion_days);
+
+    $('#matchesCreated').textContent = intFmt.format(data.matches_created);
+    $('#matchesCompleted').textContent = intFmt.format(data.matches_completed);
+
+    $('#statusOpen').textContent = intFmt.format(data.status_snapshot.open);
+    $('#statusInProgress').textContent = intFmt.format(data.status_snapshot.in_progress);
+    $('#statusCompleted').textContent = intFmt.format(data.status_snapshot.completed);
+    $('#statusCancelled').textContent = intFmt.format(data.status_snapshot.cancelled);
+
+    // List
+    const list = $('#byLocationList');
+    list.innerHTML = '';
+    data.by_location.forEach(({ location, count }) => {
+      const li = document.createElement('li');
+      li.textContent = `${location}: ${intFmt.format(count)}`;
+      list.appendChild(li);
+    });
+
+    // List
+    const list2 = $('#byCategoryList');
+    list2.innerHTML = '';
+    data.by_category.forEach(({ category, count }) => {
+      const li = document.createElement('li');
+      li.textContent = `${category}: ${intFmt.format(count)}`;
+      list2.appendChild(li);
+    });
+
+    // Chart
+    const labels = data.by_location.map(x => x.location);
+    const counts = data.by_location.map(x => x.count);
+
+    const ctx = document.getElementById('byLocationChart').getContext('2d');
+    if (byLocationChart) {
+      byLocationChart.destroy();
+    }
+    byLocationChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Requests by Location',
+          data: counts,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgb(54, 162, 235)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+          y: { beginAtZero: true, precision: 0, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+
+    // Chart
+    const labels2 = data.by_category.map(x => x.category);
+    const counts2 = data.by_category.map(x => x.count);
+    
+    const ctx2 = document.getElementById('byCategoryChart').getContext('2d');
+    if (byCategoryChart) {
+      byCategoryChart.destroy();
+    }
+    byCategoryChart = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: labels2,
+        datasets: [{
+          label: 'Requests by Category',
+          data: counts2,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgb(54, 162, 235)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+          y: { beginAtZero: true, precision: 0, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+
+  }
+  
+
+  const periodSelect = document.getElementById('periodSelect');
+
+  async function loadReport(days) {
+    try {
+      const url = new URL('/api/report?days='+days, location.origin);
+      const res = await fetch(url);
+      const data = await res.json();
+      populateDashboard(data)
+    } catch (e) {
+      wrap.innerHTML = '<div class="muted">Error loading requests</div>';
+    }
+  }
+
+  // Open modal: populate then show
+  openBtn.addEventListener('click', async () => {
+    const periodEl = document.getElementById('periodSelect');
+    const days = parseInt(periodEl.value, 10); // "1" | "7" | "30" -> number
+    await loadReport(days);
+    
+    if (typeof modal.showModal === 'function') {
+      modal.showModal();
+    } else {
+      // Fallback if <dialog> not supported
+      modal.setAttribute('open', '');
+    }
+  });
+
+  // Close controls
+  closeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.close();
+  });
+
+  // Close when clicking backdrop (dialog supports click on backdrop via ::backdrop; implement hit-test)
+  modal.addEventListener('click', (e) => {
+    const rect = modal.getBoundingClientRect();
+    const inDialog =
+      e.clientX >= rect.left && e.clientX <= rect.right &&
+      e.clientY >= rect.top && e.clientY <= rect.bottom;
+    if (!inDialog) modal.close();
+  });
+
+  // ESC closes dialog by default; ensure focus returns to opener
+  modal.addEventListener('close', () => {
+    openBtn.focus();
+  });
+  
+
+  // Period change listener (plug your logic here)
+  periodSelect.addEventListener('change', async (e) => {
+    const period = e.target.value;
+    loadReport(period);
+  });
+  
 
 document.addEventListener('DOMContentLoaded', loadCategories);
 </script>

@@ -411,6 +411,62 @@ class RequestRepository:
         cur.close()
         return [self._row_to_request(r) for r in rows]
 
+
+    def count_created(self, frm: datetime, to: datetime) -> int:
+        sql = "SELECT COUNT(*) FROM request WHERE created_at >= %s AND created_at < %s"
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm, to))
+            return int(cur.fetchone()[0])
+
+    def count_by_location(self, frm: datetime, to: datetime) -> List[Dict]:
+        sql = """
+            SELECT COALESCE(location,'Unknown') AS location, COUNT(*) AS count
+            FROM request
+            WHERE created_at >= %s AND created_at < %s
+            GROUP BY COALESCE(location,'Unknown')
+            ORDER BY count DESC
+        """
+        with self.db.cursor(dictionary=True) as cur:
+            cur.execute(sql, (frm, to))
+            return list(cur.fetchall())
+
+    def status_snapshot(self, frm: datetime, to: datetime) -> List[Dict]:
+        sql = "SELECT status, COUNT(*) AS count FROM request WHERE created_at >= %s AND created_at < %s GROUP BY status"
+        with self.db.cursor(dictionary=True) as cur:
+            cur.execute(sql, (frm, to))
+            return list(cur.fetchall())
+    
+    def count_by_category(self, frm: datetime, to: datetime, include_zero: bool = True) -> List[Dict]:
+        if include_zero:
+            sql = """
+                SELECT sc.category_id,
+                       sc.category_name,
+                       COUNT(r.request_id) AS count
+                FROM service_category sc
+                LEFT JOIN request r
+                  ON r.category_id = sc.category_id
+                 AND r.created_at >= %s AND r.created_at < %s
+                GROUP BY sc.category_id, sc.category_name
+                ORDER BY count DESC, sc.category_name
+            """
+            params = (frm, to)
+        else:
+            sql = """
+                SELECT r.category_id,
+                       sc.category_name,
+                       COUNT(*) AS count
+                FROM request r
+                JOIN service_category sc ON sc.category_id = r.category_id
+                WHERE r.created_at >= %s AND r.created_at < %s
+                GROUP BY r.category_id, sc.category_name
+                ORDER BY count DESC, sc.category_name
+            """
+            params = (frm, to)
+
+        with self.db.cursor(dictionary=True) as cur:
+            cur.execute(sql, params)
+            return list(cur.fetchall())
+
         # ---------- #28: Search past matches (via match table) ----------
     def search_past_matches(
         self,

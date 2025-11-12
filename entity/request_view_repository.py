@@ -18,3 +18,9 @@ class RequestViewRepository:
                 self.db.commit()
             finally:
                 cur.close()
+
+    def count_views(self, frm: datetime, to: datetime) -> int:
+        sql = "SELECT COUNT(*) FROM request_view WHERE viewed_at >= %s AND viewed_at < %s"
+        with self.db.cursor() as cur:
+            cur.execute(sql, (frm, to))
+            return int(cur.fetchone()[0])

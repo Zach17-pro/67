@@ -9,9 +9,11 @@ class SaveShortlistController:
     def toggle_shortlist(self, csr_id: int, request_id: int, notes: Optional[str]) -> None:
         if (self.shortlist_repo.get_shortlist_by_userid_and_requestid(csr_id, request_id)):
             self.shortlist_repo.delete_shortlist_by_userid_and_requestid(csr_id, request_id)
+            print("Delete")
             return
         added_at = datetime.now()
         self.shortlist_repo.save_shortlist(csr_id, request_id, notes, added_at)
+        print("Save")
 
 class ViewShortlistController:
     def __init__(self, shortlist_repo: ShortlistRepository):
