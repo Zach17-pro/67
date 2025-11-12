@@ -95,12 +95,6 @@ function renderCategories(list) {
     const container = document.getElementById('categories');
     container.innerHTML = '';
 
-    if (!list || list.length === 0) {
-        container.innerHTML = '<div class="category-item">No categories found</div>';
-        document.getElementById('viewAllBtn').style.display = 'none';
-        return;
-    }
-
     const visible = showingAll ? list : list.slice(0, 3);
     visible.forEach(cat => {
         const div = document.createElement('div');
@@ -143,8 +137,7 @@ function searchCategories() {
         msg.className = 'category-item';
         msg.style.justifyContent = 'center';
         msg.style.color = '#6b7280';
-        msg.style.fontStyle = 'italic';
-        msg.textContent = 'Category not found';
+        msg.textContent = '𝙲𝚊𝚝𝚎𝚐𝚘𝚛𝚢 𝚗𝚘𝚝 𝚏𝚘𝚞𝚗𝚍';
         container.appendChild(msg);
     }
 }
@@ -155,7 +148,7 @@ function startInlineEdit(id, currentName) {
     const actions = item.querySelector('.actions');
     const nameSpan = item.querySelector('span');
 
-    nameSpan.innerHTML = `<input type="text" value="${currentName}" id="editInput-${id}" style="width:90%; padding:6px; border:1px solid #d1d5db; border-radius:6px;">`;
+    nameSpan.innerHTML = `<input type="text" value="${currentName}" id="editInput-${id}" placeholder="Enter new category" style="width:90%; padding:6px; border:1px solid #d1d5db; border-radius:6px;">`;
     actions.innerHTML = `
         <button class="save-btn" onclick="saveEdit(${id})">Save</button>
         <button class="cancel-btn" onclick="cancelEdit(${id}, '${currentName.replace(/'/g, "\\'")}')">Cancel</button>
