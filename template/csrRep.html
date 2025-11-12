@@ -531,9 +531,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ request_id: requestId, pin_user_id: csrId })
-          });
-          loadActiveRequest();
-          loadMyShortlist();
+          }).then(() => loadActiveRequest()).then(() => loadMyShortlist());
 
           // alert("Added to shortlist!");
         } catch (e) {
