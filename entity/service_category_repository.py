@@ -22,6 +22,17 @@ class ServiceCategoryRepository:
         finally:
             cur.close()
 
+    def get_category(self, id) -> List[Dict[str, Any]]:
+        cur = self.db.cursor(dictionary=True, buffered=True)
+        try:
+            cur.execute(
+                "SELECT * FROM service_category WHERE category_id = %s"
+            , (id, ))
+            row = cur.fetchone()
+            return row  # already dicts with {id, name}
+        finally:
+            cur.close()
+
     # ---------- Create ----------
     def create_category(self, name: str) -> int:
         """
