@@ -16,7 +16,7 @@ mysql -u root -p < '/Users/xinnie/Library/Project/67/refinedModel.sql'
 
 Install Flask and mysql-connector modules
 ```bash
-python3 -m pip install Flask mysql-connector-python Faker
+python3 -m pip install Flask mysql-connector-python Faker pytest
 ```
 
 # Running applicaiton
