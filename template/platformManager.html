@@ -508,11 +508,9 @@ async function deleteCategory(id) {
 
   // Close when clicking backdrop (dialog supports click on backdrop via ::backdrop; implement hit-test)
   modal.addEventListener('click', (e) => {
-    const rect = modal.getBoundingClientRect();
-    const inDialog =
-      e.clientX >= rect.left && e.clientX <= rect.right &&
-      e.clientY >= rect.top && e.clientY <= rect.bottom;
-    if (!inDialog) modal.close();
+      if (e.target === modal) {
+      modal.close();
+    }
   });
 
   // ESC closes dialog by default; ensure focus returns to opener
