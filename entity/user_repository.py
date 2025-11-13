@@ -5,7 +5,7 @@
 #4 As a user admin, I want to update user accounts so that the latest information is stored.
 #5 As a user admin, I want to delete user accounts so that unused or invalid accounts are removed.
 #6 As a user admin, I want to search for user accounts so that I can quickly locate them.
-#
+
 # User Stories (User Profiles)
 #7 As a user admin, I want to create user profiles so that users’ details are recorded.
 #8 As a user admin, I want to view user profiles so that I can check stored information.
@@ -15,7 +15,6 @@
 
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-
 from flask import current_app
 from entity.user import UserProfile, UserAccount
 

@@ -14,7 +14,6 @@
 #11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
 
 from flask import Blueprint, jsonify, request, current_app
-from app import db
 from control.user_controller import (
     UserAdminCreateUserAccountController,
     UserAdminViewUserAccountController,
