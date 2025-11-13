@@ -60,6 +60,7 @@ def create_user():
         return jsonify({"error": str(e)}), 500
 
 #3 As a user admin, I want to view user accounts so that I can retrieve stored information.
+#6 As a user admin, I want to search for user accounts so that I can quickly locate them.
 # READ - List all user accounts
 @admin_api.get("")
 def list_users():
@@ -107,18 +108,6 @@ def delete_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#6 As a user admin, I want to search for user accounts so that I can quickly locate them.
-# SEARCH - Find users by keyword
-# @admin_api.get("")
-# def search_users():
-#     try:
-#         keyword = request.args.get("q", "").strip()
-#         ctrl = UserAdminSearchUserAccountController(repo())
-#         users = ctrl.search_users(keyword)
-#         return jsonify(users)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
 
 ###########################
 ###### USER PROFILES ######
@@ -143,6 +132,7 @@ def create_profile():
         return jsonify({"error": str(e)}), 500
     
 #8 As a user admin, I want to view user profiles so that I can check stored information.
+#11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
 @admin_api.get("/profile")
 def list_profiles():
     try:
@@ -185,14 +175,3 @@ def delete_profile():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-#11 As a user admin, I want to search user profiles so that I can retrieve specific information quickly.
-# @admin_api.get("/profile")
-# def search_profiles():
-#     try:
-#         keyword = request.args.get("q", "").strip()
-#         ctrl = UserAdminSearchUserProfileController(repo())
-#         profiles = ctrl.search_profiles(keyword)
-#         return jsonify(profiles)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500

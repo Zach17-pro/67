@@ -212,5 +212,3 @@ class SearchMyPinRequestsController:
         for request in requests:
             request.set_service_category(self.cat_repo.get_category(request.category_id))
         return requests
-    
-    

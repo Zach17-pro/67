@@ -1,4 +1,8 @@
-##23
+#14
+# As a CSR Rep, I want to search for PIN requests so that I can find opportunities to support.
+#15
+# As a CSR Rep, I want to view details of a PIN request so that I can evaluate suitability.
+#23
 # As a PIN, I want to create a request so that I can seek assistance.
 #24
 # As a PIN, I want to view my requests so that I can see what I have submitted.

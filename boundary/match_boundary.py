@@ -72,7 +72,6 @@ def _parse_dt(s: Optional[str]) -> Optional[datetime]:
     except Exception:
         return None
 
-# ---------- READ endpoints (keep your current behavior) ----------
 
 # GET /api/pin/matches/past?pin_user_id=3&category_id=2&service_date_from=YYYY-MM-DD&...&completion_to=YYYY-MM-DDTHH:MM
 @match_api.get("/past")
@@ -134,8 +133,6 @@ def search_past_matches():
         return jsonify(_list_to_dicts(items))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# ---------- NEW endpoints (Part 2) ----------
 
 # DELETE /api/pin/matches
 # body: { "match_id": 123, "pin_user_id": 3 }   # pin_user_id optional (include to enforce ownership)
