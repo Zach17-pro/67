@@ -123,7 +123,7 @@
         <div id="toTs" style="font-weight:600;"></div>
       </div>
 
-      <div>
+      <!-- <div>
         <div style="font-size:12px;color:#666;">Active CSRs</div>
         <div id="activeCsrs" style="font-weight:600;"></div>
       </div>
@@ -157,10 +157,10 @@
       <div>
         <div style="font-size:12px;color:#666;">Matches Completed</div>
         <div id="matchesCompleted" style="font-weight:600;"></div>
-      </div>
+      </div> -->
     </section>
 
-    <section style="margin-top:16px;">
+    <!-- <section style="margin-top:16px;">
       <h3 style="margin:0 0 8px 0;">Status Snapshot</h3>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         <div>Open: <span id="statusOpen" style="font-weight:600;"></span></div>
@@ -168,7 +168,7 @@
         <div>Completed: <span id="statusCompleted" style="font-weight:600;"></span></div>
         <div>Cancelled: <span id="statusCancelled" style="font-weight:600;"></span></div>
       </div>
-    </section>
+    </section> -->
 
     <section style="margin-top:16px;">
       <h3 style="margin:0 0 8px 0;">By Location</h3>
@@ -179,7 +179,7 @@
         <canvas id="byLocationChart"></canvas>
       </div>
     </section>
-
+<!-- 
     <section style="margin-top:16px;">
       <h3 style="margin:0 0 8px 0;">By Category</h3>
       <div style="max-height:260px;overflow:auto;border:1px solid #eee;border-radius:6px;padding:8px;margin-bottom:12px;">
@@ -188,7 +188,7 @@
       <div style="height:320px;">
         <canvas id="byCategoryChart"></canvas>
       </div>
-    </section>
+    </section> -->
 
     <footer style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
       <button value="cancel">Close</button>
@@ -375,20 +375,20 @@ async function deleteCategory(id) {
     $('#fromTs').textContent = data.from_ts;
     $('#toTs').textContent = data.to_ts;
 
-    $('#activeCsrs').textContent = intFmt.format(data.active_csrs);
-    $('#newCsrs').textContent = intFmt.format(data.new_csrs);
-    $('#requestsCreated').textContent = intFmt.format(data.requests_created);
-    $('#requestViews').textContent = intFmt.format(data.request_views);
-    $('#requestShortlists').textContent = intFmt.format(data.request_shortlists);
-    $('#avgTtc').textContent = twoDec.format(data.avg_time_to_completion_days);
+    // $('#activeCsrs').textContent = intFmt.format(data.active_csrs);
+    // $('#newCsrs').textContent = intFmt.format(data.new_csrs);
+    // $('#requestsCreated').textContent = intFmt.format(data.requests_created);
+    // $('#requestViews').textContent = intFmt.format(data.request_views);
+    // $('#requestShortlists').textContent = intFmt.format(data.request_shortlists);
+    // $('#avgTtc').textContent = twoDec.format(data.avg_time_to_completion_days);
 
-    $('#matchesCreated').textContent = intFmt.format(data.matches_created);
-    $('#matchesCompleted').textContent = intFmt.format(data.matches_completed);
+    // $('#matchesCreated').textContent = intFmt.format(data.matches_created);
+    // $('#matchesCompleted').textContent = intFmt.format(data.matches_completed);
 
-    $('#statusOpen').textContent = intFmt.format(data.status_snapshot.open);
-    $('#statusInProgress').textContent = intFmt.format(data.status_snapshot.in_progress);
-    $('#statusCompleted').textContent = intFmt.format(data.status_snapshot.completed);
-    $('#statusCancelled').textContent = intFmt.format(data.status_snapshot.cancelled);
+    // $('#statusOpen').textContent = intFmt.format(data.status_snapshot.open);
+    // $('#statusInProgress').textContent = intFmt.format(data.status_snapshot.in_progress);
+    // $('#statusCompleted').textContent = intFmt.format(data.status_snapshot.completed);
+    // $('#statusCancelled').textContent = intFmt.format(data.status_snapshot.cancelled);
 
     // List
     const list = $('#byLocationList');
@@ -399,14 +399,14 @@ async function deleteCategory(id) {
       list.appendChild(li);
     });
 
-    // List
-    const list2 = $('#byCategoryList');
-    list2.innerHTML = '';
-    data.by_category.forEach(({ category, count }) => {
-      const li = document.createElement('li');
-      li.textContent = `${category}: ${intFmt.format(count)}`;
-      list2.appendChild(li);
-    });
+    // // List
+    // const list2 = $('#byCategoryList');
+    // list2.innerHTML = '';
+    // data.by_category.forEach(({ category, count }) => {
+    //   const li = document.createElement('li');
+    //   li.textContent = `${category}: ${intFmt.format(count)}`;
+    //   list2.appendChild(li);
+    // });
 
     // Chart
     const labels = data.by_location.map(x => x.location);
@@ -440,35 +440,35 @@ async function deleteCategory(id) {
     });
 
     // Chart
-    const labels2 = data.by_category.map(x => x.category);
-    const counts2 = data.by_category.map(x => x.count);
+    // const labels2 = data.by_category.map(x => x.category);
+    // const counts2 = data.by_category.map(x => x.count);
     
-    const ctx2 = document.getElementById('byCategoryChart').getContext('2d');
-    if (byCategoryChart) {
-      byCategoryChart.destroy();
-    }
-    byCategoryChart = new Chart(ctx2, {
-      type: 'bar',
-      data: {
-        labels: labels2,
-        datasets: [{
-          label: 'Requests by Category',
-          data: counts2,
-          backgroundColor: 'rgba(54, 162, 235, 0.5)',
-          borderColor: 'rgb(54, 162, 235)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true } },
-        scales: {
-          x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
-          y: { beginAtZero: true, precision: 0, ticks: { stepSize: 1 } }
-        }
-      }
-    });
+    // const ctx2 = document.getElementById('byCategoryChart').getContext('2d');
+    // if (byCategoryChart) {
+    //   byCategoryChart.destroy();
+    // }
+    // byCategoryChart = new Chart(ctx2, {
+    //   type: 'bar',
+    //   data: {
+    //     labels: labels2,
+    //     datasets: [{
+    //       label: 'Requests by Category',
+    //       data: counts2,
+    //       backgroundColor: 'rgba(54, 162, 235, 0.5)',
+    //       borderColor: 'rgb(54, 162, 235)',
+    //       borderWidth: 1
+    //     }]
+    //   },
+    //   options: {
+    //     responsive: true,
+    //     maintainAspectRatio: false,
+    //     plugins: { legend: { display: true } },
+    //     scales: {
+    //       x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+    //       y: { beginAtZero: true, precision: 0, ticks: { stepSize: 1 } }
+    //     }
+    //   }
+    // });
 
   }
   

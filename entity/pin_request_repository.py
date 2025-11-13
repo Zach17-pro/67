@@ -370,18 +370,6 @@ class RequestRepository:
             cur.execute(sql, (frm, to))
             return int(cur.fetchone()[0])
 
-    def count_by_location(self, frm: datetime, to: datetime) -> List[Dict]:
-        sql = """
-            SELECT COALESCE(location,'Unknown') AS location, COUNT(*) AS count
-            FROM request
-            WHERE created_at >= %s AND created_at < %s
-            GROUP BY COALESCE(location,'Unknown')
-            ORDER BY count DESC
-        """
-        with self.db.cursor(dictionary=True) as cur:
-            cur.execute(sql, (frm, to))
-            return list(cur.fetchall())
-
     def status_snapshot(self, frm: datetime, to: datetime) -> List[Dict]:
         sql = "SELECT status, COUNT(*) AS count FROM request WHERE created_at >= %s AND created_at < %s GROUP BY status"
         with self.db.cursor(dictionary=True) as cur:
