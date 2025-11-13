@@ -15,11 +15,14 @@
 
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+
+from flask import current_app
 from entity.user import UserProfile, UserAccount
 
 
 class UserRepository:
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
 
     # ---------- Auth ----------

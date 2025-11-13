@@ -1,10 +1,13 @@
 from datetime import datetime
+
+from flask import current_app
 from entity.shortlist import Shortlist
 from typing import List, Dict, Optional, Any
 
 class ShortlistRepository:
   
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
 
 

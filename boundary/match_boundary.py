@@ -15,16 +15,13 @@ match_api = Blueprint("match_api", __name__, url_prefix="/api/pin/matches")
 
 
 def match_repo():
-    db = current_app.config["DB"]
-    return MatchRepository(db)
+    return MatchRepository()
 
 def req_repo():
-    db = current_app.config["DB"]
-    return RequestRepository(db)
+    return RequestRepository()
 
 def cat_repo():
-    db = current_app.config["DB"]
-    return ServiceCategoryRepository(db)
+    return ServiceCategoryRepository()
 
 # ---------- helpers ----------
 def _match_to_dict(m) -> Dict[str, Any]:
@@ -152,8 +149,7 @@ def delete_match():
         if not match_id:
             return jsonify({"error": "match_id is required"}), 400
 
-        db = current_app.config["DB"]
-        repo = MatchRepository(db)
+        repo = MatchRepository()
         deleted = repo.delete_match(int(match_id), int(pin_user_id) if pin_user_id is not None else None)
         if not deleted:
             return jsonify({"success": False, "error": "Match not found or not allowed"}), 404
@@ -175,9 +171,8 @@ def undo_complete():
         if not request_id or not pin_user_id:
             return jsonify({"error": "request_id and pin_user_id are required"}), 400
 
-        db = current_app.config["DB"]
-        mrepo = MatchRepository(db)
-        rrepo = RequestRepository(db)
+        mrepo = MatchRepository()
+        rrepo = RequestRepository()
 
         # 1) delete all matches for this request (owned by this PIN)
         n_deleted = mrepo.delete_by_request(int(request_id), int(pin_user_id))

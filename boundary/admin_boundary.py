@@ -33,8 +33,7 @@ from entity.user_repository import UserRepository
 admin_api = Blueprint("admin_api", __name__, url_prefix="/api/admin")
 
 def repo() -> UserRepository:
-    db = current_app.config["DB"]
-    return UserRepository(db)
+    return UserRepository()
 
 ###########################
 ###### USER ACCOUNTS ######

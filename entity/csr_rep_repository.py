@@ -1,12 +1,14 @@
 from typing import List, Dict, Any, Optional
+from flask import current_app
 from entity.pin_request_repository import RequestRepository
 from entity.match_repository import MatchRepository
 
 class CSRRepRepository:
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
-        self.request_repo = RequestRepository(db)
-        self.match_repo = MatchRepository(db)
+        self.request_repo = RequestRepository()
+        self.match_repo = MatchRepository()
 
     # -----------------------------
     # csr_search_requests_boundary.py

@@ -15,20 +15,16 @@ pin_req_api = Blueprint("pin_request_api", __name__, url_prefix="/api/requests")
 
 
 def req_repo():
-    db = current_app.config["DB"]
-    return RequestRepository(db)
+    return RequestRepository()
 
 def match_repo():
-    db = current_app.config["DB"]
-    return MatchRepository(db)
+    return MatchRepository()
 
 def req_view_repo():
-    db = current_app.config["DB"]
-    return RequestViewRepository(db)
+    return RequestViewRepository()
 
 def cat_repo():
-    db = current_app.config["DB"]
-    return ServiceCategoryRepository(db)
+    return ServiceCategoryRepository()
 
 
 # ---------- helpers ----------

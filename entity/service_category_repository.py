@@ -1,10 +1,12 @@
 # app/entity/service_category_repository.py
 from typing import List, Dict, Any, Optional, Tuple
+from flask import current_app
 from mysql.connector import errorcode, errors
 
 
 class ServiceCategoryRepository:
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
 
     # ---------- Read ----------

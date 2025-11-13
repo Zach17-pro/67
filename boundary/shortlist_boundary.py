@@ -7,12 +7,10 @@ from flask import Blueprint, jsonify, request, current_app
 csr_shortlist_api = Blueprint("csr_shortlist_api", __name__, url_prefix="/api/shortlist")
 
 def repo():
-    db = current_app.config["DB"]
-    return CSRRepRepository(db)
+    return CSRRepRepository()
 
 def shortRepo():
-    db = current_app.config["DB"]
-    return ShortlistRepository(db)
+    return ShortlistRepository()
 
 @csr_shortlist_api.get("")
 def csr_view_shortlist():

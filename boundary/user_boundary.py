@@ -24,8 +24,7 @@ from entity.user_repository import UserRepository
 user_api = Blueprint("user_api", __name__, url_prefix="/api/user")
 
 def repo() -> UserRepository:
-    db = current_app.config["DB"]
-    return UserRepository(db)
+    return UserRepository()
 
 #3 As a user admin, I want to view user accounts so that I can retrieve stored information.
 # READ - List all user accounts

@@ -5,8 +5,7 @@ from entity.csr_rep_repository import CSRRepRepository
 csr_search_shortlist_api = Blueprint("csr_search_shortlist_api", __name__, url_prefix="/api/csr_rep")
 
 def controller() -> CSRRepController:
-    db = current_app.config["DB"]
-    repo = CSRRepRepository(db)
+    repo = CSRRepRepository()
     return CSRRepController(repo)
 
 @csr_search_shortlist_api.get("/search_shortlist")

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import List, Optional, Any, Dict, Tuple
 from datetime import date, datetime
+
+from flask import current_app
 from entity.match import Match
 
 
@@ -12,7 +14,8 @@ class MatchRepository:
     Joins `match` -> `request` -> `service_category` to support service/date filters.
     """
 
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
 
     # ---------- fetch one ----------

@@ -6,8 +6,7 @@ from entity.service_category_repository import ServiceCategoryRepository
 pm_api = Blueprint("platform_manager_api", __name__, url_prefix="/api/platform_manager")
 
 def cat_repo() -> ServiceCategoryRepository:
-    db = current_app.config["DB"]
-    return ServiceCategoryRepository(db)
+    return ServiceCategoryRepository()
 
 @pm_api.get("")
 def pm_read_categories():

@@ -18,6 +18,8 @@
 
 from typing import List, Optional, Any, Dict
 from datetime import datetime
+
+from flask import current_app
 from entity.pin_request import Request
 from entity.match_repository import MatchRepository
 
@@ -29,7 +31,8 @@ class RequestRepository:
       #23 create, #24 view mine, #25 update, #26 delete,
       #27 search mine, #28 search past matches, #29 view past matches
     """
-    def __init__(self, db):
+    def __init__(self):
+        db = current_app.config["DB"]
         self.db = db
 
     # ---------- #23: Create a request ----------

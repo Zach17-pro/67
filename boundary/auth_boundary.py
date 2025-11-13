@@ -5,7 +5,7 @@ from control.auth_controller import AuthController
 auth_api = Blueprint("auth", __name__)
 
 def controller() -> AuthController:
-    return AuthController(UserRepository(current_app.config["DB"]))
+    return AuthController(UserRepository())
 
 @auth_api.get("/")
 def home():
