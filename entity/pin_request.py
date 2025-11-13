@@ -13,9 +13,9 @@ class Request:
     status: str  # 'Open' | 'In Progress' | 'Completed' | 'Cancelled'
     created_at: datetime
     updated_at: datetime
-    view_count: int
-    shortlist_count: int
     location: str
+    view_count: Optional[int] = None
+    shortlist_count: Optional[int] = None
     category: Optional[ServiceCategory] = None
     category_id: Optional[int] = None
 
@@ -24,6 +24,7 @@ class Request:
 
     @staticmethod
     def _row_to_request(row: Dict[str, Any]) -> "Request":
+        print(row)
         req = Request(
             request_id=row["request_id"],
             pin_user_id=row["pin_user_id"],
@@ -32,11 +33,14 @@ class Request:
             status=row["status"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
-            view_count=row["view_count"],
             category_id=row["category_id"],
-            shortlist_count=row["shortlist_count"],
             location=row["location"]
         )
+        if (row["view_count"]):
+            req.view_count=row["view_count"]
+        print("TEST")
+        if (row["shortlist_count"]):
+            req.shortlist_count=row["shortlist_count"]
         return req
 
     @classmethod

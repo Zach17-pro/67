@@ -274,12 +274,11 @@ class RequestRepository:
         Search a PIN's requests using common filters.
         """
         sql = """
-            SELECT request_id, pin_user_id, title, description, status,
-                   created_at, updated_at, shortlist_count,
-                   category_id, location
+            SELECT *
             FROM request
             WHERE pin_user_id = %s
         """
+        
         params: List[Any] = [pin_user_id]
     
         if keyword:
